@@ -120,6 +120,34 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px
 .order-summary small{color:var(--muted)}
 .order-statusline{min-height:1.5em}
 .order-paging{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.operation-target{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:14px;padding:12px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.operation-target label{flex:1 1 310px;max-width:620px;min-width:0}
+.operation-target p{flex:1 1 260px;min-width:0;color:var(--muted);font-size:13.5px}
+.operation-views{justify-self:start;max-width:100%}
+.operation-views button{min-height:40px}
+.operation-period,.operation-filters,.operation-client-search{display:flex;align-items:end;gap:9px;flex-wrap:wrap}
+.operation-period label,.operation-client-search label{flex:1 1 145px;max-width:265px;min-width:0}
+.operation-filters label{flex:1 1 120px;min-width:0}
+.operation-period select,.operation-filters select,.operation-client-search select{margin-top:5px}
+.operation-period button,.operation-client-search button{min-height:44px}
+.operation-filters{padding:0;border:0;margin:0;min-width:0}
+.operation-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.operation-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:8px;margin:0 0 12px}
+.operation-cards div{border:1px solid var(--line);padding:9px 12px;border-radius:10px;background:var(--surface-2)}
+.operation-cards dt{font-size:13px;color:var(--muted)}
+.operation-cards dd{margin:2px 0 0;font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
+.operation-result>h3,.operation-result>p,.operation-result>details{margin:10px 0}
+.operation-result details{border:1px solid var(--line);border-radius:10px;padding:10px}
+.operation-result summary{cursor:pointer;font-weight:650}
+.operation-inline{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+.operation-inline button{min-height:36px;padding:5px 8px}
+.remote-receipt{width:min(620px,calc(100vw - 24px));max-height:calc(100dvh - 24px)}
+.remote-receipt-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.remote-receipt-paper{max-width:100%;width:var(--receipt-width,72mm);margin:auto;padding:3mm;background:#fff;color:#000;overflow:auto;font:12px/1.4 ui-monospace,Consolas,monospace}
+.remote-receipt-paper pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}
+.remote-receipt-tag{margin-top:10px;text-align:center;overflow-wrap:anywhere;break-inside:avoid}
+.remote-receipt-tag strong{display:block;font-size:22pt;letter-spacing:.05em}
+@media print{body:has(#operation-receipt[open])>*:not(#operation-receipt){display:none!important}#operation-receipt{position:static;max-height:none;max-width:none;width:auto;padding:0;margin:0;overflow:visible}#operation-receipt::backdrop{display:none}#operation-receipt :is(header,.remote-receipt-actions,#operation-receipt-message){display:none!important}.remote-receipt-paper{overflow:visible;margin:0}}
 @media(max-width:680px){
   .order-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
   .overview-table,.overview-table tbody,.overview-table tr{display:block;width:100%}
@@ -129,6 +157,9 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px
   .overview-table tbody td::before{content:attr(data-label);color:var(--muted);font-size:12.5px;white-space:nowrap}
   .overview-table td>*{min-width:0}
   .overview-table .badge{white-space:normal}
+  .operation-target label,.operation-target p{max-width:none}
+  .operation-period label,.operation-client-search label{max-width:none}
+  .remote-receipt{padding:13px}
 }
 @media (max-width:720px){.stats{grid-template-columns:1fr 1fr}.bar input{max-width:none;margin-left:0}.list{grid-template-columns:1fr}.top .right{margin-left:0;width:100%}}
 </style>
@@ -146,6 +177,47 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px
     <button class="primary">Entrar</button>
   </form>
   <section id="app" hidden>
+    <nav class="overview-nav"><div class="tabs" id="area-tabs" role="tablist" aria-label="Áreas do painel">
+      <button type="button" id="area-tab-movement" data-area="movement" role="tab" aria-controls="area-movement" aria-selected="true">Relatórios</button>
+      <button type="button" id="area-tab-people" data-area="people" role="tab" aria-controls="area-people" aria-selected="false" tabindex="-1">Cadastros</button>
+      <button type="button" id="area-tab-licenses" data-area="licenses" role="tab" aria-controls="area-licenses" aria-selected="false" tabindex="-1">Licenças</button>
+    </div></nav>
+    <div class="operation-target" id="operation-target"><label>Placa do estabelecimento<select id="operation-device"><option value="">Selecione uma placa</option></select></label><p id="operation-capability" role="status"></p></div>
+    <section class="overview" id="area-movement" role="tabpanel" aria-labelledby="area-tab-movement">
+      <div class="overview-top"><div><h2>Movimentação do estacionamento</h2><p>Consulte a placa selecionada. Os períodos seguem o horário de Brasília.</p></div></div>
+      <div class="tabs operation-views" id="operation-views" role="group" aria-label="Relatórios de movimentação">
+        <button type="button" data-motion="visits" aria-pressed="true">Atendimentos</button><button type="button" data-motion="plates" aria-pressed="false">Placas por modalidade</button>
+        <button type="button" data-motion="summary" aria-pressed="false">Resumo</button><button type="button" data-motion="cash" aria-pressed="false">Caixa</button><button type="button" data-motion="monthly-payments" aria-pressed="false">Mensalidades</button>
+      </div>
+      <form id="motion-form">
+        <div class="operation-period"><label>Período<select name="period"><option value="day">Dia</option><option value="week">Semana</option><option value="month">Mês</option><option value="year">Ano</option></select></label>
+          <label>Data de referência<input name="date" type="date" min="2000-01-01" max="9999-12-31" required></label><button class="primary" id="motion-submit">Consultar</button></div>
+        <fieldset class="operation-filters" id="motion-filters">
+          <label>Placa do veículo<input name="plate" placeholder="Ex.: ABC1D23" maxlength="8" autocomplete="off" autocapitalize="characters"></label>
+          <label>Tipo<select name="type"><option value="">Todos</option><option>Carro</option><option>Moto</option><option>Utilitário</option><option>Guarda-volumes</option></select></label>
+          <label>Horário<select name="shift"><option value="">Todos</option><option value="1">Horário 1</option><option value="2">Horário 2</option></select></label>
+          <label>Entrada a partir de<input name="timeFrom" type="time"></label><label>Entrada até<input name="timeTo" type="time"></label>
+          <label>Modalidade<select name="billing"><option value="">Todas</option><option value="fraction">Fração</option><option value="daily">Diária</option><option value="overnight">Pernoite</option><option value="monthly">Mensalista</option></select></label>
+          <label>Pagamento<select name="payment"><option value="">Todos</option><option value="pending">A receber</option><option value="cash">Dinheiro</option><option value="pix">Pix</option><option value="card">Cartão</option><option value="monthly">Coberto pela mensalidade</option></select></label>
+        </fieldset>
+      </form>
+      <p class="hint" id="motion-midnight" hidden>O intervalo de entrada atravessa a meia-noite.</p>
+      <div class="operation-heading"><p class="hint" id="motion-message" role="status"></p><button type="button" id="motion-cancel" hidden>Cancelar consulta</button></div>
+      <div class="operation-result" id="motion-result"></div>
+      <div class="order-paging" id="motion-paging" hidden><button type="button" id="motion-prev">Anterior</button><span id="motion-page"></span><button type="button" id="motion-next">Próxima</button></div>
+    </section>
+    <section class="overview" id="area-people" role="tabpanel" aria-labelledby="area-tab-people" hidden>
+      <div class="overview-top"><div><h2>Clientes do estacionamento</h2><p>Veículos registrados e mensalistas da placa selecionada.</p></div></div>
+      <form class="operation-client-search" id="people-form">
+        <label>Cadastro<select name="scope"><option value="customers">Clientes e veículos</option><option value="monthly-plans">Mensalistas</option></select></label>
+        <label>Buscar<input name="search" type="search" maxlength="80" placeholder="Nome, modelo ou placa"></label><button class="primary" id="people-submit">Consultar</button>
+        <button type="button" id="people-export" disabled>Exportar todos os veículos (CSV)</button>
+      </form>
+      <div class="operation-heading"><p class="hint" id="people-message" role="status"></p><button type="button" id="people-cancel" hidden>Cancelar consulta</button></div>
+      <div class="operation-result" id="people-result"></div>
+      <div class="order-paging" id="people-paging" hidden><button type="button" id="people-prev">Anterior</button><span id="people-page"></span><button type="button" id="people-next">Próxima</button></div>
+    </section>
+    <section id="area-licenses" role="tabpanel" aria-labelledby="area-tab-licenses" hidden>
     <nav class="overview-nav"><div class="tabs" id="overview-tabs" role="tablist" aria-label="Painel de licenças">
       <button type="button" id="overview-tab-devices" data-overview="devices" role="tab" aria-controls="overview-devices" aria-selected="true">Placas</button>
       <button type="button" id="overview-tab-clients" data-overview="clients" role="tab" aria-controls="overview-clients" aria-selected="false" tabindex="-1">Cadastros</button>
@@ -172,6 +244,7 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px
       <p class="hint order-statusline" id="orders-status" role="status"></p>
       <div id="orders-result"></div>
       <div id="orders-pagination" class="order-paging" aria-label="Páginas do relatório" hidden><button type="button" id="orders-prev">Anterior</button><span id="orders-page"></span><button type="button" id="orders-next">Próxima</button></div>
+    </section>
     </section>
   </section>
 </main>
@@ -220,12 +293,17 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px
   <div class="payments-paging" id="payments-paging" hidden><button type="button" id="payments-prev">Anterior</button><span id="payments-page"></span><button type="button" id="payments-next">Próxima</button></div>
 </dialog>
 <div id="toast" role="status" hidden></div>
+<dialog id="operation-receipt" class="remote-receipt" aria-labelledby="operation-receipt-title">
+  <header class="payments-header"><h2 id="operation-receipt-title">Comprovante</h2><button type="button" data-close aria-label="Fechar comprovante">×</button></header>
+  <p class="hint" id="operation-receipt-message" role="status"></p><div id="operation-receipt-body"></div>
+  <div class="remote-receipt-actions"><button type="button" id="operation-receipt-print" hidden>Imprimir comprovante</button><button type="button" data-close>Fechar</button></div>
+</dialog>
 <script>
 'use strict';
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store={get(k){try{return sessionStorage.getItem(k)||localStorage.getItem(k);}catch{return null;}},set(k,v,keep){try{(keep?localStorage:sessionStorage).setItem(k,v);(keep?sessionStorage:localStorage).removeItem(k);}catch{}},clear(){try{for(const s of [localStorage,sessionStorage]){s.removeItem('lic-server');s.removeItem('lic-token');}}catch{}}};
-let server=store.get('lic-server')||'',token=store.get('lic-token')||'',devices=[],serverTime=0,filter='all',overview='devices',timer,toastTimer;
+let server=store.get('lic-server')||'',token=store.get('lic-token')||'',devices=[],serverTime=0,filter='all',overview='devices',activeArea='movement',timer,toastTimer;
 const statusName={active:'Liberada',expired:'Vencida',none:'Sem liberação',blocked:'Bloqueada'};
 const planName={month:'mensal',year:'anual',days:'por dias'};
 const timeZone='America/Sao_Paulo';
@@ -239,14 +317,14 @@ function editDate(t){
 const when=t=>{if(!t)return 'nunca';const s=serverTime-t;if(s<90)return 'agora há pouco';if(s<3600)return `há ${Math.round(s/60)} min`;if(s<86400)return `há ${Math.round(s/3600)} h`;return `há ${Math.round(s/86400)} dias (${day(t)})`;};
 function toast(t,err){clearTimeout(toastTimer);$('#toast').textContent=t;$('#toast').className=err?'err':'';$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,err?9000:4500);}
 const billingPath='/api/admin/billing';
-async function api(path,body){
+async function api(path,body,signal){
   const url=new URL(server);
   const billingRequest=path===billingPath;
   const local=url.protocol==='http:'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname);
   if((url.protocol!=='https:'&&(!local||billingRequest))||url.username||url.password||url.pathname!=='/'||url.search||url.hash){
     throw new Error('Entre com o endereço HTTPS do servidor de licenças.');
   }
-  const r=await fetch(new URL(path,url.origin),{method:body===undefined?'GET':'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:'error'});
+  const r=await fetch(new URL(path,url.origin),{method:body===undefined?'GET':'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:'error',signal});
   const j=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));
   if(!r.ok){const e=new Error(j.error||'Falha no servidor');e.status=r.status;throw e;}
   return j;
@@ -254,8 +332,9 @@ async function api(path,body){
 async function load(){
   const j=await api('/api/admin/devices');devices=j.devices;serverTime=j.serverTime;
   $('#updated').textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  if(overview==='devices')render();
-  if(overview==='clients')renderClients();
+  refreshRemoteDevices();
+  if(activeArea==='licenses'&&overview==='devices')render();
+  if(activeArea==='licenses'&&overview==='clients')renderClients();
 }
 function counts(){const c={all:devices.length,asking:0,active:0,expired:0,blocked:0};for(const d of devices){if(d.requested&&d.status!=='active')c.asking++;if(d.status==='active')c.active++;if(d.status==='expired'||d.status==='none')c.expired++;if(d.status==='blocked')c.blocked++;}return c;}
 function render(){
@@ -464,15 +543,16 @@ function csvCell(value){
   if(/^\s*[=+@-]/u.test(safe))safe="'"+safe;
   return '"'+safe.replace(/"/g,'""')+'"';
 }
-$('#clients-export').onclick=()=>{
-  const rows=sortedDevices().map(record=>[registeredName(record),record.mac,statusName[registeredStatus(record)],Number.isFinite(record.expires)&&record.expires>0?day(record.expires):'']);
-  if(!rows.length)return;
-  rows.unshift(['Estabelecimento','Placa (MAC)','Situação','Vencimento']);
-  const text='\ufeffsep=;\r\n'+rows.map(row=>row.map(csvCell).join(';')).join('\r\n')+'\r\n';
+function downloadClientsCsv(filename,columns,rows){
+  const text='\ufeffsep=;\r\n'+[columns,...rows].map(row=>row.map(csvCell).join(';')).join('\r\n')+'\r\n';
   const link=document.createElement('a');
   const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));
-  link.href=url;link.download='cadastros-licencas.csv';document.body.appendChild(link);link.click();link.remove();
+  link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$('#clients-export').onclick=()=>{
+  const rows=sortedDevices().map(record=>[registeredName(record),record.mac,statusName[registeredStatus(record)],Number.isFinite(record.expires)&&record.expires>0?day(record.expires):'']);
+  if(rows.length)downloadClientsCsv('cadastros-licencas.csv',['Estabelecimento','Placa (MAC)','Situação','Vencimento'],rows);
 };
 
 const orderDate=value=>Number.isFinite(value)&&value>0?paymentDate.format(value*1000):'—';
@@ -495,7 +575,7 @@ async function loadOrders(page=0){
   ordersStatus.textContent='Carregando pedidos…';ordersStatus.classList.remove('error');
   try{
     const data=await api('/api/admin/license-report?'+params);
-    if(seq!==orderLoad||overview!=='reports')return;
+    if(seq!==orderLoad||activeArea!=='licenses'||overview!=='reports')return;
     const lastPage=Math.max(0,Math.ceil(data.total/data.pageSize)-1);
     if(page>lastPage)return loadOrders(lastPage);
     orderPage=data.page;
@@ -512,7 +592,7 @@ async function loadOrders(page=0){
     $('#orders-next').disabled=orderPage>=lastPage;
     $('#orders-page').textContent=`Página ${orderPage+1} de ${lastPage+1}`;
   }catch(error){
-    if(seq!==orderLoad||overview!=='reports')return;
+    if(seq!==orderLoad||activeArea!=='licenses'||overview!=='reports')return;
     ordersStatus.textContent=error.status===404?'Atualize o servidor de licenças para consultar todos os pedidos.':error.message;
     ordersStatus.classList.add('error');
     result.innerHTML='<button type="button">Tentar novamente</button>';
@@ -533,6 +613,462 @@ ordersFilters.onsubmit=event=>{
 };
 $('#orders-prev').onclick=()=>loadOrders(orderPage-1);
 $('#orders-next').onclick=()=>loadOrders(orderPage+1);
+
+const areaButtons=[...document.querySelectorAll('[data-area]')];
+const boardSelect=$('#operation-device'),motionForm=$('#motion-form'),peopleForm=$('#people-form');
+const remoteReceipt=$('#operation-receipt');
+const motion={mode:'visits',query:null,page:0,seq:0,loading:false};
+const people={query:null,page:0,seq:0,loading:false};
+const remoteQueues=new Map();
+const wait=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds));
+const noOperation=Symbol('cancelled operation');
+const methodNames={cash:'Dinheiro',pix:'Pix',card:'Cartão',pending:'Pendente',monthly:'Incluído na mensalidade'};
+const modeNames={fraction:'Fração',daily:'Diária',overnight:'Pernoite',monthly:'Mensalista'};
+const planStatuses={active:'Em dia','due-soon':'A vencer',overdue:'Vencido',inactive:'Inativo'};
+const remoteUnavailable='A placa não respondeu. Confira se está ligada, com internet e com as consultas remotas autorizadas.';
+const brl=cents=>paymentMoney.format((Number.isFinite(cents)?cents:0)/100);
+const isoDay=date=>date.toISOString().slice(0,10);
+const brDay=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')?value.split('-').reverse().join('/'):'—';
+
+function operationState(key){return key==='motion'?motion:people;}
+function operationMessage(key,text,error=false){
+  const message=$(`#${key}-message`);
+  message.textContent=text;message.classList.toggle('error',error);
+}
+function boardRecord(){return devices.find(record=>record.mac===boardSelect.value);}
+function operationReadiness(){
+  const board=boardRecord(),ready=board?.operationsRemote===true;
+  const status=$('#operation-capability');
+  status.textContent=!board?'Selecione um estabelecimento para consultar o estacionamento.':ready?
+    `Consultas autorizadas. Última conexão ${when(board.lastSeen)}.`:
+    'Atualize o ESP32 e ative Configurações → Painel remoto → Autorizar consultas na placa.';
+  status.classList.toggle('error',!!board&&!ready);
+  $('#motion-submit').disabled=!ready||motion.loading;
+  $('#people-submit').disabled=!ready||people.loading;
+  $('#people-export').disabled=!ready||people.loading||peopleForm.elements.scope.value!=='customers';
+  $('#motion-cancel').hidden=!motion.loading;
+  $('#people-cancel').hidden=!people.loading;
+}
+function resetOperation(key,text=''){
+  const state=operationState(key);
+  state.seq++;state.loading=false;state.query=null;state.page=0;
+  $(`#${key}-result`).replaceChildren();$(`#${key}-paging`).hidden=true;
+  operationMessage(key,text);operationReadiness();
+}
+function refreshRemoteDevices(){
+  const former=boardSelect.value,ordered=sortedDevices();
+  const signature=JSON.stringify(ordered.map(({mac,name,operationsRemote})=>[mac,name,operationsRemote===true]));
+  if(boardSelect.dataset.signature!==signature){
+    boardSelect.dataset.signature=signature;
+    boardSelect.replaceChildren(new Option('Selecione uma placa',''),...ordered.map(board=>{
+      const label=`${registeredName(board)} · ${board.mac}`;
+      return new Option(label,board.mac);
+    }));
+    if(ordered.some(board=>board.mac===former))boardSelect.value=former;
+    else if(ordered.length===1)boardSelect.value=ordered[0].mac;
+  }
+  if(former!==boardSelect.value||boardRecord()?.operationsRemote!==true){
+    resetOperation('motion');resetOperation('people');
+  }
+  if(!motionForm.elements.date.value)motionForm.elements.date.value=editDate(serverTime||Math.floor(Date.now()/1000));
+  operationReadiness();
+}
+boardSelect.onchange=()=>{
+  resetOperation('motion');resetOperation('people');
+  if(remoteReceipt.open)remoteReceipt.close();
+};
+function showArea(area){
+  if(area===activeArea)return;
+  if(activeArea==='movement'&&motion.loading)resetOperation('motion');
+  if(activeArea==='people'&&people.loading)resetOperation('people');
+  if(activeArea==='licenses')++orderLoad;
+  activeArea=area;
+  for(const button of areaButtons){
+    const selected=button.dataset.area===area;
+    button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
+    document.getElementById(button.getAttribute('aria-controls')).hidden=!selected;
+  }
+  $('#operation-target').hidden=area==='licenses';
+  if(area==='licenses')showOverview(overview);
+  operationReadiness();
+}
+for(const [index,button] of areaButtons.entries()){
+  button.onclick=()=>showArea(button.dataset.area);
+  button.onkeydown=event=>{
+    const target={ArrowLeft:(index+areaButtons.length-1)%areaButtons.length,ArrowRight:(index+1)%areaButtons.length,Home:0,End:areaButtons.length-1}[event.key];
+    if(!Number.isInteger(target))return;
+    event.preventDefault();showArea(areaButtons[target].dataset.area);areaButtons[target].focus();
+  };
+}
+async function boundedOperationApi(path,body){
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
+  try{return await api(path,body,controller.signal);}
+  finally{clearTimeout(timeout);}
+}
+function remoteQuery(mac,op,params,current,progress){
+  const prior=remoteQueues.get(mac);
+  if(prior)progress('Aguardando a consulta anterior desta placa…');
+  const task=(prior||Promise.resolve()).then(async()=>{
+    if(!current())throw noOperation;
+    progress('Enviando consulta à placa…');
+    let ticket;
+    try{ticket=await boundedOperationApi('/api/admin/operations/request',{mac,op,params});}
+    catch(error){
+      if(error.name==='AbortError')throw Error('O servidor demorou a responder. Aguarde a consulta pendente e tente novamente.');
+      if(error.status===409)throw Error(error.message||'Há outra consulta pendente nesta placa. Aguarde um momento.');
+      throw error;
+    }
+    if(!/^[0-9a-f-]{36}$/i.test(ticket.id||''))throw Error('O servidor não identificou a consulta.');
+    progress('Aguardando resposta da placa…');
+    const deadline=performance.now()+129000;
+    let failures=0;
+    while(performance.now()<deadline){
+      await wait(1200);
+      let result;
+      try{result=await boundedOperationApi('/api/admin/operations/result?id='+encodeURIComponent(ticket.id));failures=0;}
+      catch(error){
+        if(error.status===401||error.status===403)throw error;
+        if(++failures>=4)throw Error('Não foi possível consultar o resultado. Tente novamente em instantes.');
+        continue;
+      }
+      if(result.state==='done')return result.result;
+      if(result.state==='error')throw Error(!result.error||/expir|tempo limite|prazo/i.test(result.error)?remoteUnavailable:result.error);
+    }
+    throw Error(remoteUnavailable);
+  });
+  const settled=task.then(()=>{},()=>{});
+  remoteQueues.set(mac,settled);
+  settled.then(()=>{if(remoteQueues.get(mac)===settled)remoteQueues.delete(mac);});
+  return task;
+}
+function startOperation(key){
+  const state=operationState(key),board=boardRecord();
+  if(board?.operationsRemote!==true)return null;
+  const seq=++state.seq,mac=board.mac;
+  state.loading=true;operationReadiness();
+  const current=()=>seq===state.seq&&boardSelect.value===mac&&activeArea===(key==='motion'?'movement':'people');
+  return {mac,current,progress:text=>{if(current())operationMessage(key,text);},finish(){if(current()){state.loading=false;operationReadiness();}}};
+}
+function operationPaging(key,page,total,pageSize){
+  const pages=Math.max(1,Math.ceil(total/pageSize));
+  $(`#${key}-paging`).hidden=pages===1;
+  $(`#${key}-page`).textContent=`Página ${page+1} de ${pages}`;
+  $(`#${key}-prev`).disabled=page===0;
+  $(`#${key}-next`).disabled=page+1>=pages;
+}
+function movementRange(){
+  const period=motionForm.elements.period.value,input=motionForm.elements.date;
+  if(!input.reportValidity())return null;
+  const value=input.value,from=new Date(value+'T12:00:00Z'),to=new Date(from);
+  if(period==='week'){
+    from.setUTCDate(from.getUTCDate()-(from.getUTCDay()+6)%7);to.setTime(from.getTime());to.setUTCDate(to.getUTCDate()+6);
+  }else if(period==='month'){
+    from.setUTCDate(1);to.setUTCMonth(to.getUTCMonth()+1,0);
+  }else if(period==='year'){
+    from.setUTCMonth(0,1);to.setUTCMonth(11,31);
+  }
+  return {period,from:isoDay(from),to:isoDay(to)};
+}
+function motionFilters(){
+  const fields=motionForm.elements;
+  const normalized=fields.plate.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);
+  const output={};
+  if(normalized)output.plate=normalized;
+  for(const key of ['type','billing','payment','timeFrom','timeTo'])if(fields[key].value)output[key]=fields[key].value;
+  if(fields.shift.value)output.shift=Number(fields.shift.value);
+  return output;
+}
+function reportCards(stats){
+  return `<dl class="operation-cards">${stats.map(([label,value])=>`<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>`;
+}
+
+const countValue=value=>Number.isSafeInteger(value)?value:0;
+const labelOf=(labels,key,fallback='—')=>Object.hasOwn(labels,key)?labels[key]:fallback;
+const receiptActions=v=>Number.isSafeInteger(v.id)&&v.id>0?`<div class="operation-inline"><button type="button" data-visit-id="${v.id}" data-visit-day="${esc(v.day)}" data-receipt-kind="entry">Entrada</button>${v.out?
+  `<button type="button" data-visit-id="${v.id}" data-visit-day="${esc(v.day)}" data-receipt-kind="exit">Saída</button>`:''}</div>`:'—';
+function visitTariff(v){
+  if(v.billing==='fraction'&&Number.isInteger(v.fractionPrice)&&Number.isInteger(v.fractionMinutes)&&v.fractionMinutes>0)
+    return `${brl(v.fractionPrice)} / ${v.fractionMinutes} min${Number.isInteger(v.dailyPrice)?` · limite ${brl(v.dailyPrice)}`:''}`;
+  if(v.billing!=='monthly'&&v.billing!=='fraction'&&Number.isInteger(v.dailyPrice))return `Tarifa ${brl(v.dailyPrice)}`;
+  return '';
+}
+function elapsed(start,end){
+  if(!(start>0&&end>=start))return '';
+  const n=end-start;
+  return [Math.floor(n/3600),Math.floor(n%3600/60),n%60].map(value=>String(value).padStart(2,'0')).join(':');
+}
+function visitRow(v){
+  const covered=v.modality==='monthly'||v.billing==='monthly';
+  const method=labelOf(methodNames,v.payment),billing=labelOf(modeNames,v.modality,v.stayLabel||'Sem modalidade identificada');
+  const rate=visitTariff(v),duration=elapsed(v.in,v.out);
+  return `<tr><td data-label="Veículo"><div><strong>${esc(v.plate)}</strong><small>${esc([v.type,v.model].filter(Boolean).join(' · '))}</small><small>${esc(v.name)}</small></div></td>
+    <td data-label="Entrada"><div><strong>${esc(orderDate(v.in))}</strong><small>${v.shift?`Horário ${countValue(v.shift)}`:''}</small></div></td>
+    <td data-label="Saída"><div><strong>${v.out?esc(orderDate(v.out)):'Em andamento'}</strong>${duration?`<small>${duration}</small>`:''}${!v.out&&v.due?`<small>Retirada até ${esc(orderDate(v.due))}</small>`:''}</div></td>
+    <td data-label="Modalidade"><div><strong>${esc(billing)}</strong>${rate?`<small>${esc(rate)}</small>`:''}</div></td>
+    <td data-label="Pagamento" class="num"><div><strong>${covered?'Incluído':brl(v.price)}</strong><small>${method}</small>${v.paidAt?`<small>${esc(orderDate(v.paidAt))}</small>`:''}</div></td>
+    <td data-label="Comprovantes">${receiptActions(v)}</td></tr>`;
+}
+function visitStats(stats){
+  return reportCards([['Atendimentos',countValue(stats.entries)],['Encerrados',countValue(stats.exits)],['Recebido por estadia',brl(stats.paid)],['A receber',brl(stats.pending)],['Valor total',brl(stats.amount)]]);
+}
+function visitBreakdown(breakdown){
+  if(!breakdown)return '';
+  return `<details><summary>Totais do filtro por modalidade, tipo e horário</summary>${[
+    ['Modalidade',breakdown.billing,modeNames],['Tipo',breakdown.type,{other:'Outros'}],['Horário',breakdown.shift,{'1':'Horário 1','2':'Horário 2'}],
+  ].map(([title,rows,names])=>`<h3>${title}</h3>${overviewTable([['Grupo'],['Atendimentos',true],['Recebido',true],['A receber',true]],
+    Object.entries(rows||{}).map(([key,value])=>`<tr><td data-label="Grupo"><strong>${esc(labelOf(names,key,key))}</strong></td>
+    <td data-label="Atendimentos" class="num">${countValue(value.entries)}</td><td data-label="Recebido" class="num">${brl(value.paid)}</td><td data-label="A receber" class="num">${brl(value.pending)}</td></tr>`).join(''))}`).join('')}</details>`;
+}
+function renderVisits(data){
+  const table=data.items.length?overviewTable([['Veículo'],['Entrada'],['Saída'],['Modalidade'],['Pagamento',true],['Comprovantes']],data.items.map(visitRow).join('')):
+    '<p class="empty">Nenhum atendimento com estes filtros.</p>';
+  return visitStats(data.stats)+table+visitBreakdown(data.breakdown);
+}
+async function allPages(op,params,context,caption,defaultPageSize){
+  const entries=[],known=new Set();
+  let expected;
+  for(let page=0;;page++){
+    if(!context.current())throw noOperation;
+    const progress=text=>context.progress(page?`${caption} · ${entries.length} de ${expected}. ${text}`:text);
+    const answer=await remoteQuery(context.mac,op,{...params,page},context.current,progress);
+    if(!context.current())throw noOperation;
+    if(!Array.isArray(answer?.items)||!Number.isSafeInteger(answer.total)||answer.total<0)
+      throw Error('A placa devolveu uma lista incompleta. Confira a atualização e consulte novamente.');
+    const size=answer.pageSize||defaultPageSize;
+    if(expected===undefined)expected=answer.total;
+    if(answer.total!==expected||(!answer.items.length&&entries.length<expected))throw Error('Os dados mudaram durante a consulta. Consulte novamente.');
+    for(const row of answer.items){
+      const key=op==='visits'?row.id:row.plate;
+      if(known.has(key))throw Error('Os dados mudaram durante a consulta. Consulte novamente.');
+      known.add(key);entries.push(row);
+    }
+    if(entries.length===expected)return entries;
+    if(entries.length>expected||page+1>=Math.ceil(expected/size))throw Error('A placa devolveu uma lista incompleta. Consulte novamente.');
+    context.progress(`${caption} · ${entries.length} de ${expected}.`);
+  }
+}
+function renderPlateGroups(items){
+  const groups=new Map();
+  for(const item of items){
+    const plate=item.type==='Guarda-volumes'?'Guarda-volumes':item.plate,mode=item.modality||item.billing;
+    const key=JSON.stringify([plate,mode]);
+    if(!groups.has(key))groups.set(key,{plate,mode,count:0,paid:0,pending:0});
+    const current=groups.get(key);current.count++;
+    if(item.payment==='pending')current.pending+=item.price;else current.paid+=item.price;
+  }
+  const ordered=[...groups.values()].sort((a,b)=>a.plate.localeCompare(b.plate)||String(a.mode).localeCompare(String(b.mode)));
+  if(!ordered.length)return '<p class="empty">Nenhuma placa com estes filtros.</p>';
+  return overviewTable([['Placa'],['Modalidade'],['Atendimentos',true],['Recebido',true],['A receber',true]],ordered.map(group=>`<tr>
+    <td data-label="Placa"><strong>${esc(group.plate)}</strong></td><td data-label="Modalidade">${labelOf(modeNames,group.mode,'Não identificada')}</td>
+    <td data-label="Atendimentos" class="num">${group.count}</td><td data-label="Recebido" class="num">${brl(group.paid)}</td><td data-label="A receber" class="num">${brl(group.pending)}</td></tr>`).join(''));
+}
+const addValues=(a,b)=>a+(Number.isFinite(b)?b:0);
+const centsSum=value=>Array.isArray(value)?value.reduce(addValues,0):0;
+function makeDailySummary(days){
+  return days.map(d=>({day:d.day,entries:centsSum(d.n),exits:countValue(d.exits),paid:centsSum(d.paid),pending:centsSum(d.pend)}));
+}
+function groupDates(rows,yearView,columns){
+  if(!yearView)return rows;
+  const periods=new Map();
+  for(const row of rows){
+    const day=row.day.slice(0,8)+'01';
+    if(!periods.has(day))periods.set(day,{day});
+    const item=periods.get(day);
+    for(const field of columns)item[field]=addValues(item[field]||0,row[field]);
+  }
+  return [...periods.values()];
+}
+const displayPeriod=(date,yearView)=>yearView?`${date.slice(5,7)}/${date.slice(0,4)}`:brDay(date);
+function renderDailySummary(daily,yearView){
+  const total=daily.reduce((a,b)=>({entries:a.entries+b.entries,exits:a.exits+b.exits,paid:a.paid+b.paid,pending:a.pending+b.pending}),{entries:0,exits:0,paid:0,pending:0});
+  const cards=visitStats({...total,amount:total.paid+total.pending});
+  if(!daily.length)return cards+'<p class="empty">Sem movimentação no período.</p>';
+  const rows=groupDates(daily,yearView,['entries','exits','paid','pending']);
+  return cards+overviewTable([[yearView?'Mês':'Dia'],['Atendimentos',true],['Encerrados',true],['Recebido por estadia',true],['A receber',true]],rows.map(row=>`<tr>
+    <td data-label="Período"><strong>${displayPeriod(row.day,yearView)}</strong></td><td data-label="Atendimentos" class="num">${row.entries}</td>
+    <td data-label="Encerrados" class="num">${row.exits}</td><td data-label="Recebido por estadia" class="num">${brl(row.paid)}</td><td data-label="A receber" class="num">${brl(row.pending)}</td></tr>`).join(''));
+}
+const paymentMethods=['cash','pix','card'];
+const moneyCards=(totals,last='Recebido no período')=>reportCards([...paymentMethods.map(method=>[methodNames[method],brl(totals[method])]),[last,brl(totals.total)]]);
+function sumMethods(group){
+  return group.reduce((a,b)=>{for(const key of [...paymentMethods,'total'])a[key]=addValues(a[key],b?.[key]);return a;},{cash:0,pix:0,card:0,total:0});
+}
+function renderPeriodCash(chunks,yearView){
+  const received=sumMethods(chunks.map(chunk=>chunk.received));
+  const parking=sumMethods(chunks.map(chunk=>chunk.parking)),monthly=sumMethods(chunks.map(chunk=>chunk.monthly));
+  const daily=chunks.flatMap(chunk=>chunk.days||[]).map(row=>({day:row.day,closed:row.closed,opened:row.opened,...row.received}));
+  const days=groupDates(daily,yearView,[...paymentMethods,'total']);
+  const table=days.length?overviewTable([[yearView?'Mês':'Dia'],['Dinheiro',true],['Pix',true],['Cartão',true],['Total',true]],days.map(row=>`<tr>
+    <td data-label="Período"><div><button type="button" data-open-cash-date="${esc(row.day)}" data-open-cash-period="${yearView?'month':'day'}">${displayPeriod(row.day,yearView)}</button>${yearView?'':`<small>${row.closed?'Fechado':row.opened?'Aberto':'Sem abertura'}</small>`}</div></td>
+    ${paymentMethods.map(method=>`<td data-label="${methodNames[method]}" class="num">${brl(row[method])}</td>`).join('')}<td data-label="Total" class="num">${brl(row.total)}</td></tr>`).join('')):'<p class="empty">Sem recebimentos no período.</p>';
+  return moneyCards(received)+`<p class="hint">Estadias ${brl(parking.total)} · Mensalidades ${brl(monthly.total)}. Valores pela data do pagamento.</p>`+table;
+}
+function renderCashDay(data){
+  const{received,parking,monthly,opening,deposits,withdrawals,closing}=data;
+  const conference=closing?`<details><summary>Conferência fechada em ${esc(orderDate(closing.at))}</summary>${overviewTable([['Forma'],['Esperado',true],['Conferido',true],['Diferença',true]],paymentMethods.map(method=>`<tr>
+    <td data-label="Forma">${methodNames[method]}</td><td data-label="Esperado" class="num">${brl(closing.expected?.[method])}</td>
+    <td data-label="Conferido" class="num">${brl(closing.counted?.[method])}</td><td data-label="Diferença" class="num">${brl(closing.difference?.[method])}</td></tr>`).join(''))}</details>`:'';
+  const rows=data.receipts.length?overviewTable([['Placa e cliente'],['Recebido em'],['Origem'],['Pagamento'],['Valor',true]],data.receipts.map(item=>`<tr>
+    <td data-label="Placa e cliente"><div><strong>${esc(item.plate)}</strong><small>${esc(item.name)}</small></div></td><td data-label="Recebido em">${esc(orderDate(item.paidAt))}</td>
+    <td data-label="Origem">${item.monthly?'Mensalidade':'Estadia'}</td><td data-label="Pagamento">${labelOf(methodNames,item.payment)}</td><td data-label="Valor" class="num">${brl(item.amount)}</td></tr>`).join('')):
+    '<p class="empty">Nenhum pagamento registrado para esta data.</p>';
+  return moneyCards(received,'Recebido no dia')+`<p class="hint">Estadias ${brl(parking.total)} · Mensalidades ${brl(monthly.total)}</p>
+    <p class="hint">${data.closed?'Caixa fechado':data.opened?'Caixa aberto':'Caixa sem abertura'} · Fundo inicial ${brl(opening)} · Suprimentos ${brl(deposits)} · Sangrias ${brl(withdrawals)}</p>`+conference+rows;
+}
+function renderInstallments(data){
+  const rows=data.items.length?overviewTable([['Placa e mensalista'],['Recebido em'],['Pagamento'],['Vencimento renovado'],['Valor',true]],data.items.map(row=>`<tr>
+    <td data-label="Placa e mensalista"><div><strong>${esc(row.plate)}</strong><small>${esc(row.name)}</small></div></td><td data-label="Recebido em">${esc(orderDate(row.paidAt))}</td>
+    <td data-label="Pagamento">${labelOf(methodNames,row.payment)}</td><td data-label="Vencimento renovado"><div><strong>${brDay(row.toDue)}</strong><small>Anterior ${brDay(row.fromDue)}</small></div></td>
+    <td data-label="Valor" class="num">${brl(row.amount)}</td></tr>`).join('')):'<p class="empty">Nenhuma mensalidade recebida no período.</p>';
+  return reportCards([['Mensalidades recebidas',countValue(data.total)],['Valor recebido',brl(data.amount)]])+rows;
+}
+
+function showFilterFields(){
+  const visible=motion.mode==='visits'||motion.mode==='plates';
+  $('#motion-filters').hidden=$('#motion-filters').disabled=!visible;
+  const {timeFrom,timeTo}=motionForm.elements;
+  $('#motion-midnight').hidden=!(visible&&timeFrom.value&&timeTo.value&&timeFrom.value>timeTo.value);
+}
+motionForm.addEventListener('input',showFilterFields);
+$('#operation-views').onclick=event=>{
+  const button=event.target.closest('[data-motion]');
+  if(!button||motion.mode===button.dataset.motion)return;
+  motion.mode=button.dataset.motion;
+  for(const other of $('#operation-views').querySelectorAll('[data-motion]'))other.setAttribute('aria-pressed',String(other===button));
+  resetOperation('motion');showFilterFields();
+};
+async function loadMotion(page=0){
+  const query=motion.query;if(!query||motion.loading)return;
+  const context=startOperation('motion');if(!context)return;
+  const {mode,period,from,to,filters}=query;
+  const year=period==='year',range={from,to};
+  const result=$('#motion-result');result.replaceChildren();$('#motion-paging').hidden=true;
+  const request=(operation,params)=>remoteQuery(context.mac,operation,params,context.current,context.progress);
+  const progressRange=from===to?brDay(from):`${brDay(from)} a ${brDay(to)}`;
+  try{
+    let markup,pagination;
+    if(mode==='visits'){
+      const data=await request('visits',{...range,...filters,page});
+      markup=renderVisits(data);pagination=[data.total,data.pageSize||20];
+    }else if(mode==='plates'){
+      const items=await allPages('visits',{...range,...filters},context,'Agrupando placas do período',20);
+      markup=renderPlateGroups(items);
+    }else if(mode==='summary'){
+      const data=await request('summary',{...range,...(year?{group:'month'}:{})});
+      const daily=year?data.months.map(row=>({...row,day:row.month+'-01'})):data.days;
+      markup=renderDailySummary(makeDailySummary(daily),year);
+    }else if(mode==='cash'&&from===to){
+      const data=await request('cash-day',{day:from,page});
+      markup=renderCashDay(data);pagination=[data.receiptTotal,12];
+    }else if(mode==='cash'){
+      const data=await request('cash',{...range,...(year?{group:'month'}:{})});
+      const days=year?data.months.map(row=>({...row,day:row.month+'-01'})):data.days;
+      markup=renderPeriodCash([{...data,days}],year);
+    }else{
+      const data=await request('monthly-payments',{...range,page});
+      markup=renderInstallments(data);pagination=[data.total,12];
+    }
+    if(!context.current())return;
+    result.innerHTML=markup;motion.page=page;
+    if(pagination)operationPaging('motion',page,...pagination);
+    operationMessage('motion',progressRange);
+  }catch(error){
+    if(context.current()&&error!==noOperation)operationMessage('motion',error.message||remoteUnavailable,true);
+  }finally{context.finish();}
+}
+function consultMovement(){
+  if(motion.loading)return;
+  const range=movementRange();if(!range)return;
+  motion.query={...range,mode:motion.mode,filters:motionFilters()};
+  loadMotion();
+}
+motionForm.onsubmit=event=>{event.preventDefault();consultMovement();};
+$('#motion-prev').onclick=()=>loadMotion(motion.page-1);
+$('#motion-next').onclick=()=>loadMotion(motion.page+1);
+$('#motion-cancel').onclick=()=>resetOperation('motion','Consulta cancelada.');
+$('#motion-result').onclick=event=>{
+  const receipt=event.target.closest('[data-receipt-kind]');
+  if(receipt){openRemoteReceipt(receipt);return;}
+  const period=event.target.closest('[data-open-cash-date]');
+  if(!period)return;
+  motionForm.elements.period.value=period.dataset.openCashPeriod;
+  motionForm.elements.date.value=period.dataset.openCashDate;
+  consultMovement();
+};
+
+function customerStatus(row){
+  if(!row.monthlyStatus)return 'Avulso';
+  return `Mensalista · ${labelOf(planStatuses,row.monthlyStatus,'Situação indisponível')}`;
+}
+function renderPeople(items,scope){
+  if(!items.length)return '<p class="empty">Nenhum cadastro encontrado nesta consulta.</p>';
+  if(scope==='monthly-plans')return overviewTable([['Cliente'],['Placa e veículo'],['Situação'],['Vencimento'],['Mensalidade',true]],items.map(row=>`<tr>
+    <td data-label="Cliente"><strong>${esc(row.name||'Sem nome')}</strong></td>
+    <td data-label="Placa e veículo"><div><strong>${esc(row.plate)}</strong><small>${esc([row.type,row.model].filter(Boolean).join(' · '))}</small>${Array.isArray(row.alternatePlates)&&row.alternatePlates.length?`<small>Outras placas ${esc(row.alternatePlates.join(', '))}</small>`:''}</div></td>
+    <td data-label="Situação">${labelOf(planStatuses,row.status)}</td><td data-label="Vencimento">${brDay(row.due)}</td><td class="num" data-label="Mensalidade">${brl(row.amount)}</td></tr>`).join(''));
+  return overviewTable([['Cliente'],['Placa e veículo'],['Cadastro'],['Total de passagens',true],['Modalidades']],items.map(row=>`<tr>
+    <td data-label="Cliente"><strong>${esc(row.name||'Sem nome')}</strong></td><td data-label="Placa e veículo"><div><strong>${esc(row.plate)}</strong><small>${esc([row.type,row.model].filter(Boolean).join(' · '))}</small></div></td>
+    <td data-label="Cadastro">${customerStatus(row)}</td><td data-label="Total de passagens" class="num">${countValue(row.visits)}</td>
+    <td data-label="Modalidades"><div>${row.billingCounts?`<small>${['fraction','daily','overnight'].map(key=>`${modeNames[key]} ${countValue(row.billingCounts[key])}`).join(' · ')}</small>`:''}
+    ${row.monthlyVisits?`<small>${countValue(row.monthlyVisits)} pela mensalidade</small>`:''}${row.unclassifiedVisits?`<small>${countValue(row.unclassifiedVisits)} sem modalidade identificada</small>`:''}</div></td></tr>`).join(''));
+}
+async function loadPeople(page=0){
+  const query=people.query;if(!query||people.loading)return;
+  const context=startOperation('people');if(!context)return;
+  const output=$('#people-result');output.replaceChildren();$('#people-paging').hidden=true;
+  try{
+    const data=await remoteQuery(context.mac,query.scope,{search:query.search,page},context.current,context.progress);
+    if(!context.current())return;
+    output.innerHTML=renderPeople(data.items,query.scope);people.page=page;
+    operationMessage('people',`${data.total} ${data.total===1?'cadastro encontrado':'cadastros encontrados'}.`);
+    operationPaging('people',page,data.total,data.pageSize||12);
+  }catch(error){
+    if(context.current()&&error!==noOperation)operationMessage('people',error.message||remoteUnavailable,true);
+  }finally{context.finish();}
+}
+peopleForm.onsubmit=event=>{
+  event.preventDefault();if(people.loading)return;
+  people.query={scope:peopleForm.elements.scope.value,search:peopleForm.elements.search.value.trim()};loadPeople();
+};
+peopleForm.elements.scope.onchange=()=>resetOperation('people');
+$('#people-prev').onclick=()=>loadPeople(people.page-1);
+$('#people-next').onclick=()=>loadPeople(people.page+1);
+$('#people-cancel').onclick=()=>resetOperation('people','Consulta cancelada.');
+$('#people-export').onclick=async()=>{
+  if(people.loading)return;
+  const context=startOperation('people');if(!context)return;
+  try{
+    const items=await allPages('customers',{search:''},context,'Preparando o CSV',12);
+    if(!context.current())return;
+    const columns=['Cliente','Placa','Tipo','Marca e modelo','Cadastro','Passagens','Fração','Diária','Pernoite','Pela mensalidade','Sem modalidade identificada'];
+    const rows=items.map(row=>[row.name,row.plate,row.type,row.model,customerStatus(row),row.visits,row.billingCounts?.fraction,row.billingCounts?.daily,row.billingCounts?.overnight,row.monthlyVisits,row.unclassifiedVisits]);
+    downloadClientsCsv(`cadastros-${context.mac.replace(/:/g,'')}.csv`,columns,rows);
+    operationMessage('people',`${items.length} ${items.length===1?'cadastro exportado':'cadastros exportados'}.`);
+  }catch(error){
+    if(context.current()&&error!==noOperation)operationMessage('people',error.message||remoteUnavailable,true);
+  }finally{context.finish();}
+};
+
+let receiptSequence=0;
+async function openRemoteReceipt(button){
+  const board=boardRecord();if(board?.operationsRemote!==true)return;
+  const mac=board.mac,seq=++receiptSequence,id=Number(button.dataset.visitId),kind=button.dataset.receiptKind,day=button.dataset.visitDay;
+  const current=()=>seq===receiptSequence&&remoteReceipt.open&&boardSelect.value===mac;
+  const progress=text=>{if(current())$('#operation-receipt-message').textContent=text;};
+  $('#operation-receipt-body').replaceChildren();$('#operation-receipt-print').hidden=true;
+  $('#operation-receipt-title').textContent=kind==='exit'?'Comprovante de saída':'Comprovante de entrada';
+  if(!remoteReceipt.open)remoteReceipt.showModal();
+  try{
+    const data=await remoteQuery(mac,'receipt',{id,kind,...(day?{day}:{})},current,progress);
+    if(!current())return;
+    const width=Math.max(35,Math.min(80,Number(data.printable)||72)),tag=data.tag;
+    $('#operation-receipt-body').innerHTML=`<article class="remote-receipt-paper" style="--receipt-width:${width}mm"><pre>${esc(data.text)}</pre>${tag?
+      `<div class="remote-receipt-tag"><pre>${esc(tag.cut)}</pre><strong>${esc(tag.plate)}</strong>${[tag.model,tag.name,tag.key,tag.parking].filter(Boolean).map(line=>`<p>${esc(line)}</p>`).join('')}</div>`:''}</article>`;
+    $('#operation-receipt-print').hidden=false;progress('');
+  }catch(error){if(current()&&error!==noOperation)progress(error.message||remoteUnavailable);}
+}
+remoteReceipt.addEventListener('close',()=>{if(!remoteReceipt.open)++receiptSequence;});
+$('#operation-receipt-print').onclick=()=>window.print();
 
 function paymentRow(row){
   const state=Object.hasOwn(paymentState,row.state)?row.state:'pending';
@@ -610,7 +1146,7 @@ for(const [mode,form] of [['recheck',recheckForm],['resolve',resolveForm]]){
       if(paymentsDialog.open)showPaymentMessage(mode==='resolve'?'Revisão registrada.':
         order.state==='needs_review'?'Pagamento confirmado e encaminhado para revisão.':'Pagamento conferido.');
       if(order.state==='paid')await load();
-      if(overview==='reports')loadOrders(orderPage);
+      if(activeArea==='licenses'&&overview==='reports')loadOrders(orderPage);
     }catch(error){if(paymentsDialog.open)showPaymentMessage(error.message,true);}
     finally{paymentWriting=false;submit.disabled=false;}
   };
@@ -620,7 +1156,9 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('di
 $('#search').oninput=render;
 $('#refresh').onclick=()=>{
   load().catch(e=>toast(e.message,true));
-  if(overview==='reports')loadOrders(orderPage);
+  if(activeArea==='licenses'&&overview==='reports')loadOrders(orderPage);
+  if(activeArea==='movement'&&motion.query)loadMotion(motion.page);
+  if(activeArea==='people'&&people.query)loadPeople(people.page);
 };
 $('#logout').onclick=()=>{store.clear();location.reload();};
 async function enter(){
