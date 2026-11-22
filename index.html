@@ -42,7 +42,7 @@ main{max-width:1180px;margin:auto;padding:22px 20px 40px}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
 .tabs{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;flex-wrap:wrap}
 .tabs button{border:0;background:none;border-radius:9px;min-height:36px}
-.tabs button[aria-pressed=true]{background:var(--navy);color:#fff}
+.tabs button[aria-pressed=true],.tabs button[aria-selected=true]{background:var(--navy);color:#fff}
 .bar input{max-width:300px;margin-left:auto}
 .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px}
@@ -70,28 +70,109 @@ dialog form{display:grid;gap:14px}
 #billing-dialog fieldset{border:0;padding:0;margin:0;min-width:0;display:grid;gap:14px}
 #billing-dialog .hint{display:block;color:var(--muted);font-size:13px}
 .prices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.payments-dialog{width:min(680px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto}
+.payments-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px}
+.payments-dialog .hint,.payment-row small{color:var(--muted);font-size:13px}
+.payments-dialog .payment-filters{grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;align-items:end;gap:9px}
+.payment-filters select,.payment-action select{margin-top:5px}
+.payment-filters button,.payment-action button{min-height:44px}
+.payment-action{margin:12px 0;padding:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px}
+.payment-action .dialog-actions,.payments-paging{flex-wrap:wrap}
+.payments-message{min-height:1.4em;margin-top:9px}
+.payments-list{display:grid;gap:7px;margin:9px 0;padding:0;list-style:none}
+.payment-row{min-width:0;display:grid;gap:6px;padding:12px;border:1px solid var(--line);border-radius:12px}
+.payment-row header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.payment-row .facts{margin:0;min-width:0}
+.payment-row button{justify-self:start;min-height:44px}
+.payment-row .b-needs_review{background:var(--warn-soft);color:var(--warn-ink)}
+.payment-row .b-paid,.payment-row .b-reviewed{background:var(--ok-soft);color:var(--ok)}
+.payments-paging{display:flex;gap:8px;justify-content:space-between;align-items:center}
+@media(max-width:500px){
+  .payments-dialog{padding:14px}
+  .payments-dialog .payment-filters{grid-template-columns:minmax(0,1fr) auto}
+  .payment-filters label:first-child{grid-column:1/-1}
+}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;border-left:5px solid var(--lane);font-weight:550;max-width:calc(100vw - 24px);z-index:9}
 #toast.err{background:#8f2318}
 footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px}
+.overview-nav{margin-bottom:18px}
+.overview{display:grid;gap:14px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);min-width:0}
+.overview-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.overview-top h2{font-size:19px}
+.overview-top p,.overview .hint{color:var(--muted);font-size:13.5px}
+.overview-search{max-width:360px}
+.overview-table{width:100%;border-collapse:collapse;table-layout:auto;text-align:left}
+.overview-table th{font-size:13px;color:var(--muted);font-weight:650;background:var(--surface-2)}
+.overview-table th,.overview-table td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.overview-table td{overflow-wrap:anywhere}
+.overview-table tr:last-child td{border-bottom:0}
+.overview-table :is(td,th).num{text-align:right;font-variant-numeric:tabular-nums}
+.overview-table small{display:block;color:var(--muted)}
+.overview .b-paid,.overview .b-reviewed{background:var(--ok-soft);color:var(--ok)}
+.overview .b-needs_review{background:var(--warn-soft);color:var(--warn-ink)}
+.overview .b-pending{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.order-filters{display:grid;grid-template-columns:repeat(3,minmax(125px,1fr)) auto;align-items:end;gap:10px}
+.order-filters select{margin-top:5px}
+.order-filters button{min-height:44px}
+.order-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(142px,100%),1fr));gap:7px;list-style:none;margin:0;padding:0}
+.order-summary li{border:1px solid var(--line);border-radius:10px;background:var(--surface-2);padding:8px 10px;min-width:0}
+.order-summary strong,.order-summary small{display:block;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.order-summary small{color:var(--muted)}
+.order-statusline{min-height:1.5em}
+.order-paging{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media(max-width:680px){
+  .order-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .overview-table,.overview-table tbody,.overview-table tr{display:block;width:100%}
+  .overview-table thead{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .overview-table tbody tr{margin-bottom:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
+  .overview-table tbody td{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:4px 0;border:0;text-align:right}
+  .overview-table tbody td::before{content:attr(data-label);color:var(--muted);font-size:12.5px;white-space:nowrap}
+  .overview-table td>*{min-width:0}
+  .overview-table .badge{white-space:normal}
+}
 @media (max-width:720px){.stats{grid-template-columns:1fr 1fr}.bar input{max-width:none;margin-left:0}.list{grid-template-columns:1fr}.top .right{margin-left:0;width:100%}}
 </style>
 </head>
 <body>
-<header class="top"><div class="top-in"><span class="mark">E</span><h1>Painel de licenças<small>Placas do sistema de estacionamento</small></h1><div class="right" id="session" hidden><span id="updated" class="mac" style="color:#b9c6e2"></span><button id="billing" type="button">Pagamentos</button><button id="refresh">Atualizar</button><button id="logout">Sair</button></div></div></header>
+<header class="top"><div class="top-in"><span class="mark">E</span><h1>Painel de licenças<small>Placas do sistema de estacionamento</small></h1><div class="right" id="session" hidden><span id="updated" class="mac" style="color:#b9c6e2"></span><button id="billing" type="button">Pagamentos</button><button id="payments" type="button">Conciliação</button><button id="refresh">Atualizar</button><button id="logout">Sair</button></div></div></header>
 <main>
   <form class="login" id="login">
     <h2>Entrar no painel</h2>
     <p>Use o endereço do seu servidor na Cloudflare e a senha do painel (o segredo ADMIN_TOKEN que você criou no Worker).</p>
     <label>Endereço do servidor<input name="server" type="url" placeholder="https://estacionamento-licencas.seu-usuario.workers.dev" required></label>
     <label>Senha do painel<input name="token" type="password" required autocomplete="current-password"></label>
-    <label class="check"><input type="checkbox" name="remember" checked>Lembrar neste aparelho</label>
+    <label class="check"><input type="checkbox" name="remember">Lembrar neste aparelho</label>
     <p class="error" id="login-error" hidden></p>
     <button class="primary">Entrar</button>
   </form>
   <section id="app" hidden>
-    <div class="stats" id="stats"></div>
-    <div class="bar"><div class="tabs" id="tabs"></div><input id="search" type="search" placeholder="Buscar nome do estacionamento ou MAC" aria-label="Buscar"></div>
-    <div class="list" id="list"></div>
+    <nav class="overview-nav"><div class="tabs" id="overview-tabs" role="tablist" aria-label="Painel de licenças">
+      <button type="button" id="overview-tab-devices" data-overview="devices" role="tab" aria-controls="overview-devices" aria-selected="true">Placas</button>
+      <button type="button" id="overview-tab-clients" data-overview="clients" role="tab" aria-controls="overview-clients" aria-selected="false" tabindex="-1">Cadastros</button>
+      <button type="button" id="overview-tab-reports" data-overview="reports" role="tab" aria-controls="overview-reports" aria-selected="false" tabindex="-1">Relatórios</button>
+    </div></nav>
+    <section id="overview-devices" role="tabpanel" aria-labelledby="overview-tab-devices">
+      <div class="stats" id="stats"></div>
+      <div class="bar"><div class="tabs" id="tabs"></div><input id="search" type="search" placeholder="Buscar nome do estacionamento ou MAC" aria-label="Buscar placas"></div>
+      <div class="list" id="list"></div>
+    </section>
+    <section class="overview" id="overview-clients" role="tabpanel" aria-labelledby="overview-tab-clients" hidden>
+      <div class="overview-top"><div><h2>Cadastros de licenças</h2><p id="clients-count" role="status"></p></div><button type="button" id="clients-export">Exportar todos (CSV)</button></div>
+      <label class="overview-search">Buscar cadastro<input id="clients-search" type="search" placeholder="Estacionamento ou MAC"></label>
+      <div id="clients-result"></div>
+    </section>
+    <section class="overview" id="overview-reports" role="tabpanel" aria-labelledby="overview-tab-reports" hidden>
+      <div class="overview-top"><div><h2>Pedidos de licença</h2><p>As datas dos pedidos seguem o horário de Brasília.</p></div></div>
+      <form class="order-filters" id="orders-filters">
+        <label>De<input name="from" type="date"></label><label>Até<input name="to" type="date"></label>
+        <label>Situação<select name="state"><option value="all">Todas</option><option value="pending">Aguardando</option><option value="expired">Link vencido</option><option value="paid">Confirmado</option><option value="needs_review">Em revisão</option><option value="reviewed">Revisado</option></select></label>
+        <button class="primary">Consultar</button>
+      </form>
+      <div id="orders-summary" hidden><h3>Totais por situação</h3><ul class="order-summary" id="orders-summary-list"></ul></div>
+      <p class="hint order-statusline" id="orders-status" role="status"></p>
+      <div id="orders-result"></div>
+      <div id="orders-pagination" class="order-paging" aria-label="Páginas do relatório" hidden><button type="button" id="orders-prev">Anterior</button><span id="orders-page"></span><button type="button" id="orders-next">Próxima</button></div>
+    </section>
   </section>
 </main>
 <footer>Sistema criado por Felipe Bruno</footer>
@@ -114,37 +195,67 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px
     <div class="dialog-actions"><button type="button" data-close>Cancelar</button><button id="billing-save" class="primary" disabled>Salvar</button></div>
   </form>
 </dialog>
+<dialog id="payments-dialog" class="payments-dialog" aria-labelledby="payments-title">
+  <header class="payments-header"><div><h2 id="payments-title">Conciliação de pagamentos</h2><p class="hint">Consulte as cobranças da licença e acompanhe as que precisam de revisão.</p></div><button type="button" data-close aria-label="Fechar conciliação">×</button></header>
+  <form id="payment-filters" class="payment-filters">
+    <label>MAC ou identificador do pedido<input name="q" type="search" maxlength="160" placeholder="Ex.: 24:6F:28"></label>
+    <label>Situação<select name="state"><option value="all">Todas</option><option value="needs_review">Em revisão</option><option value="pending">Aguardando</option><option value="expired">Link vencido</option><option value="paid">Confirmado</option><option value="reviewed">Revisado</option></select></label>
+    <button class="primary">Buscar</button>
+  </form>
+  <section id="payment-action" class="payment-action" hidden>
+    <form id="payment-recheck" hidden>
+      <h3>Conferir na InfinitePay</h3><p class="hint">Use os identificadores da venda no Checkout Integrado.</p>
+      <label>ID da transação<input name="transaction" maxlength="160" required placeholder="transaction_nsu"></label>
+      <label>Código da fatura<input name="slug" maxlength="160" required placeholder="slug"></label>
+      <div class="dialog-actions"><button type="button" data-cancel-payment>Voltar</button><button class="primary">Conferir pagamento</button></div>
+    </form>
+    <form id="payment-resolve" hidden>
+      <h3>Registrar resolução</h3><p class="hint">Selecione a ação que você já concluiu. Estornos são feitos na InfinitePay.</p>
+      <label>Resultado<select name="resolution" required><option value="">Escolha</option><option value="applied_manually">Licença liberada manualmente</option><option value="refunded">Pagamento estornado</option><option value="other">Outro atendimento concluído</option></select></label>
+      <div class="dialog-actions"><button type="button" data-cancel-payment>Voltar</button><button class="primary">Salvar revisão</button></div>
+    </form>
+  </section>
+  <p class="payments-message hint" id="payments-message" role="status"></p>
+  <ul class="payments-list" id="payments-list"></ul>
+  <div class="payments-paging" id="payments-paging" hidden><button type="button" id="payments-prev">Anterior</button><span id="payments-page"></span><button type="button" id="payments-next">Próxima</button></div>
+</dialog>
 <div id="toast" role="status" hidden></div>
 <script>
 'use strict';
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const store={get(k){try{return localStorage.getItem(k)||sessionStorage.getItem(k);}catch{return null;}},set(k,v,keep){try{(keep?localStorage:sessionStorage).setItem(k,v);}catch{}},clear(){try{for(const s of [localStorage,sessionStorage]){s.removeItem('lic-server');s.removeItem('lic-token');}}catch{}}};
-let server=store.get('lic-server')||'',token=store.get('lic-token')||'',devices=[],serverTime=0,filter='all',timer,toastTimer;
+const store={get(k){try{return sessionStorage.getItem(k)||localStorage.getItem(k);}catch{return null;}},set(k,v,keep){try{(keep?localStorage:sessionStorage).setItem(k,v);(keep?sessionStorage:localStorage).removeItem(k);}catch{}},clear(){try{for(const s of [localStorage,sessionStorage]){s.removeItem('lic-server');s.removeItem('lic-token');}}catch{}}};
+let server=store.get('lic-server')||'',token=store.get('lic-token')||'',devices=[],serverTime=0,filter='all',overview='devices',timer,toastTimer;
 const statusName={active:'Liberada',expired:'Vencida',none:'Sem liberação',blocked:'Bloqueada'};
 const planName={month:'mensal',year:'anual',days:'por dias'};
-const day=t=>new Date(t*1000).toLocaleDateString('pt-BR');
+const timeZone='America/Sao_Paulo';
+const day=t=>new Date(t*1000).toLocaleDateString('pt-BR',{timeZone});
+const dateParts=new Intl.DateTimeFormat('pt-BR',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'});
+function editDate(t){
+  if(!t)return '';
+  const parts=Object.fromEntries(dateParts.formatToParts(new Date(t*1000)).map(p=>[p.type,p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
 const when=t=>{if(!t)return 'nunca';const s=serverTime-t;if(s<90)return 'agora há pouco';if(s<3600)return `há ${Math.round(s/60)} min`;if(s<86400)return `há ${Math.round(s/3600)} h`;return `há ${Math.round(s/86400)} dias (${day(t)})`;};
 function toast(t,err){clearTimeout(toastTimer);$('#toast').textContent=t;$('#toast').className=err?'err':'';$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,err?9000:4500);}
 const billingPath='/api/admin/billing';
 async function api(path,body){
-  let target=server.replace(/\/+$/,'')+path;
+  const url=new URL(server);
   const billingRequest=path===billingPath;
-  if(billingRequest){
-    const url=new URL(server);
-    if(url.protocol!=='https:'||url.username||url.password||url.pathname!=='/'||url.search||url.hash){
-      throw new Error('Entre com o endereço HTTPS do servidor de licenças para configurar pagamentos.');
-    }
-    target=new URL(path,url.origin);
+  const local=url.protocol==='http:'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname);
+  if((url.protocol!=='https:'&&(!local||billingRequest))||url.username||url.password||url.pathname!=='/'||url.search||url.hash){
+    throw new Error('Entre com o endereço HTTPS do servidor de licenças.');
   }
-  const r=await fetch(target,{method:body===undefined?'GET':'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:billingRequest?'error':'follow'});
+  const r=await fetch(new URL(path,url.origin),{method:body===undefined?'GET':'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:'error'});
   const j=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));
   if(!r.ok){const e=new Error(j.error||'Falha no servidor');e.status=r.status;throw e;}
   return j;
 }
 async function load(){
   const j=await api('/api/admin/devices');devices=j.devices;serverTime=j.serverTime;
-  $('#updated').textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});render();
+  $('#updated').textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  if(overview==='devices')render();
+  if(overview==='clients')renderClients();
 }
 function counts(){const c={all:devices.length,asking:0,active:0,expired:0,blocked:0};for(const d of devices){if(d.requested&&d.status!=='active')c.asking++;if(d.status==='active')c.active++;if(d.status==='expired'||d.status==='none')c.expired++;if(d.status==='blocked')c.blocked++;}return c;}
 function render(){
@@ -168,11 +279,11 @@ function card(d){
   <div class="actions"><button class="primary" data-act="month" data-mac="${d.mac}">Liberar 1 mês</button><button class="primary" data-act="year" data-mac="${d.mac}">Liberar 1 ano</button><button data-act="days" data-mac="${d.mac}">Dias…</button></div>
   <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button>${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div></article>`;
 }
-let target='';
+let target='',originalExpiryDate='';
 async function act(what,mac,btn){
   const d=devices.find(x=>x.mac===mac),name=d.name||mac;target=mac;
   if(what==='days'){$('#days-for').textContent=`${name} · ${mac}`;$('#days-dialog').showModal();return;}
-  if(what==='edit'){const f=$('#edit-form');f.note.value=d.note||'';f.date.value=d.expires?new Date(d.expires*1000).toISOString().slice(0,10):'';$('#edit-for').textContent=`${name} · ${mac}`;$('#edit-dialog').showModal();return;}
+  if(what==='edit'){const f=$('#edit-form');f.note.value=d.note||'';originalExpiryDate=editDate(d.expires);f.date.value=originalExpiryDate;$('#edit-for').textContent=`${name} · ${mac}`;$('#edit-dialog').showModal();return;}
   const ask={block:`Bloquear ${name} agora? As novas entradas param assim que a placa consultar o servidor.`,reset:`Liberar a troca de código de ${name}? Use quando a placa foi regravada do zero ou trocada.`,delete:`Excluir ${name} do painel? Se ela conectar de novo, aparece como placa nova, sem liberação.`}[what];
   if(ask&&!confirm(ask))return;
   btn.disabled=true;
@@ -186,7 +297,7 @@ async function act(what,mac,btn){
   }catch(e){toast(e.message,true);btn.disabled=false;}
 }
 $('#days-form').onsubmit=async e=>{e.preventDefault();try{await api('/api/admin/grant',{mac:target,period:'days',days:Number(e.target.days.value)});$('#days-dialog').close();toast(`Liberada por mais ${e.target.days.value} dias.`);await load();}catch(err){toast(err.message,true);}};
-$('#edit-form').onsubmit=async e=>{e.preventDefault();const f=e.target,body={mac:target,note:f.note.value};if(f.date.value)body.expires=Math.floor(Date.parse(f.date.value+'T23:59:59-03:00')/1000);try{await api('/api/admin/update',body);$('#edit-dialog').close();toast('Placa atualizada.');await load();}catch(err){toast(err.message,true);}};
+$('#edit-form').onsubmit=async e=>{e.preventDefault();const f=e.target,body={mac:target,note:f.note.value};if(f.date.value&&f.date.value!==originalExpiryDate)body.expires=Math.floor(Date.parse(f.date.value+'T23:59:59-03:00')/1000);try{await api('/api/admin/update',body);$('#edit-dialog').close();toast('Placa atualizada.');await load();}catch(err){toast(err.message,true);}};
 const billingDialog=$('#billing-dialog');
 const billingForm=$('#billing-form');
 const billingFields=$('#billing-fields');
@@ -284,9 +395,233 @@ billingForm.onsubmit=async event=>{
 };
 billingDialog.addEventListener('cancel',event=>{if(billingSaving) event.preventDefault();});
 billingDialog.addEventListener('close',()=>{if(!billingDialog.open) billingForm.elements.apiKey.value='';});
+
+const paymentsDialog=$('#payments-dialog'),paymentFilters=$('#payment-filters');
+const paymentList=$('#payments-list'),paymentMessage=$('#payments-message'),paymentAction=$('#payment-action');
+const recheckForm=$('#payment-recheck'),resolveForm=$('#payment-resolve');
+const paymentState={pending:'Aguardando',expired:'Link vencido',paid:'Confirmado',needs_review:'Em revisão',reviewed:'Revisado'};
+const paymentReasons={device_missing:'Placa removida antes da confirmação',overlap:'Outra cobrança da mesma renovação já foi aplicada',amount_mismatch:'Valor confirmado diferente do valor do pedido'};
+const paymentResolution={applied_manually:'Licença liberada manualmente',refunded:'Pagamento estornado',other:'Outro atendimento concluído'};
+const paymentDate=new Intl.DateTimeFormat('pt-BR',{timeZone,dateStyle:'short',timeStyle:'short'});
+const paymentMoney=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+let paymentPage=0,paymentLoad=0,selectedPayment=null,paymentWriting=false;
+
+const tabButtons=[...document.querySelectorAll('[data-overview]')];
+const ordersFilters=$('#orders-filters'),ordersStatus=$('#orders-status');
+let orderQuery={state:'all'},orderLoad=0,orderPage=0;
+
+function showOverview(view){
+  overview=view;
+  for(const button of tabButtons){
+    const active=button.dataset.overview===view;
+    button.setAttribute('aria-selected',String(active));
+    button.tabIndex=active?0:-1;
+    document.getElementById(button.getAttribute('aria-controls')).hidden=!active;
+  }
+  if(view==='devices')render();
+  if(view==='clients')renderClients();
+  if(view==='reports')loadOrders(orderPage);
+  else ++orderLoad;
+}
+for(const [index,button] of tabButtons.entries()){
+  button.onclick=()=>showOverview(button.dataset.overview);
+  button.onkeydown=event=>{
+    const targets={ArrowLeft:(index+tabButtons.length-1)%tabButtons.length,ArrowRight:(index+1)%tabButtons.length,Home:0,End:tabButtons.length-1};
+    if(!Object.hasOwn(targets,event.key))return;
+    event.preventDefault();
+    const target=tabButtons[targets[event.key]];
+    showOverview(target.dataset.overview);
+    target.focus();
+  };
+}
+
+const registeredName=record=>record.name||'Sem nome do estacionamento';
+const registeredStatus=record=>Object.hasOwn(statusName,record.status)?record.status:'none';
+const registeredExpiry=record=>Number.isFinite(record.expires)&&record.expires>0?day(record.expires):'—';
+const simplify=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const sortedDevices=()=>[...devices].sort((a,b)=>(a.name||'').localeCompare(b.name||'','pt-BR')||(a.mac||'').localeCompare(b.mac||''));
+function overviewTable(columns,rows){
+  return `<table class="overview-table" role="table"><thead><tr>${columns.map(([label,num])=>
+    `<th scope="col"${num?' class="num"':''}>${label}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+function renderClients(){
+  const query=simplify($('#clients-search').value.trim());
+  const compactMac=query.replace(/[:-]/g,'');
+  const rows=sortedDevices().filter(record=>!query||simplify(registeredName(record)).includes(query)||
+    (compactMac&&simplify(record.mac).replace(/[:-]/g,'').includes(compactMac)));
+  $('#clients-count').textContent=query?`${rows.length} de ${devices.length} placas`:
+    `${devices.length} ${devices.length===1?'placa cadastrada':'placas cadastradas'}`;
+  $('#clients-export').disabled=!devices.length;
+  $('#clients-result').innerHTML=rows.length?overviewTable([['Estabelecimento'],['Placa (MAC)'],['Situação'],['Vencimento']],rows.map(record=>{
+    const state=registeredStatus(record);
+    return `<tr><td data-label="Estabelecimento"><strong>${esc(registeredName(record))}</strong></td><td data-label="Placa (MAC)"><span class="mac">${esc(record.mac)}</span></td>
+      <td data-label="Situação"><span class="badge b-${state}">${statusName[state]}</span></td><td data-label="Vencimento"><span>${esc(registeredExpiry(record))}</span></td></tr>`;
+  }).join('')):`<p class="empty">${query?'Nenhum cadastro encontrado.':'Nenhuma placa cadastrada.'}</p>`;
+}
+$('#clients-search').oninput=renderClients;
+function csvCell(value){
+  let safe=String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ');
+  if(/^\s*[=+@-]/u.test(safe))safe="'"+safe;
+  return '"'+safe.replace(/"/g,'""')+'"';
+}
+$('#clients-export').onclick=()=>{
+  const rows=sortedDevices().map(record=>[registeredName(record),record.mac,statusName[registeredStatus(record)],Number.isFinite(record.expires)&&record.expires>0?day(record.expires):'']);
+  if(!rows.length)return;
+  rows.unshift(['Estabelecimento','Placa (MAC)','Situação','Vencimento']);
+  const text='\ufeffsep=;\r\n'+rows.map(row=>row.map(csvCell).join(';')).join('\r\n')+'\r\n';
+  const link=document.createElement('a');
+  const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));
+  link.href=url;link.download='cadastros-licencas.csv';document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+
+const orderDate=value=>Number.isFinite(value)&&value>0?paymentDate.format(value*1000):'—';
+function orderReportRow(order){
+  const state=Object.hasOwn(paymentState,order.state)?order.state:'pending';
+  const period=order.period==='month'?'Mensal':order.period==='year'?'Anual':'—';
+  return `<tr><td data-label="Pedido"><span>${esc(order.id)}</span></td><td data-label="Emitido em"><span>${esc(orderDate(order.issuedAt))}</span></td>
+    <td data-label="Estabelecimento"><div><strong>${esc(order.name||'Cadastro indisponível')}</strong><small>${esc(order.mac)}</small></div></td>
+    <td data-label="Plano"><span>${period}</span></td><td data-label="Situação"><div><span class="badge b-${state}">${paymentState[state]}</span>${order.confirmedAt?`<small>${esc(orderDate(order.confirmedAt))}</small>`:''}</div></td>
+    <td class="num" data-label="Valor do pedido"><span>${paymentMoney.format(order.amount/100)}</span></td></tr>`;
+}
+async function loadOrders(page=0){
+  const seq=++orderLoad;
+  const params=new URLSearchParams(orderQuery);
+  params.set('page',String(page));
+  const result=$('#orders-result'),summary=$('#orders-summary'),pagination=$('#orders-pagination');
+  summary.hidden=pagination.hidden=true;
+  result.replaceChildren();
+  result.setAttribute('aria-busy','true');
+  ordersStatus.textContent='Carregando pedidos…';ordersStatus.classList.remove('error');
+  try{
+    const data=await api('/api/admin/license-report?'+params);
+    if(seq!==orderLoad||overview!=='reports')return;
+    const lastPage=Math.max(0,Math.ceil(data.total/data.pageSize)-1);
+    if(page>lastPage)return loadOrders(lastPage);
+    orderPage=data.page;
+    $('#orders-summary-list').innerHTML=Object.entries(paymentState).map(([state,label])=>{
+      const {count=0,amount=0}=data.summary[state]||{};
+      return `<li class="b-${state}" data-order-summary="${state}"><span>${label}</span><strong>${count} ${count===1?'pedido':'pedidos'}</strong><small>${paymentMoney.format(amount/100)}</small></li>`;
+    }).join('');
+    summary.hidden=false;
+    ordersStatus.textContent=`${data.total} ${data.total===1?'pedido neste filtro':'pedidos neste filtro'} · ${paymentMoney.format(data.amount/100)} em pedidos`;
+    result.innerHTML=data.orders.length?overviewTable([['Pedido'],['Emitido em'],['Estabelecimento'],['Plano'],['Situação'],['Valor do pedido',true]],
+      data.orders.map(orderReportRow).join('')):'<p class="empty">Nenhum pedido neste filtro.</p>';
+    pagination.hidden=lastPage===0;
+    $('#orders-prev').disabled=orderPage===0;
+    $('#orders-next').disabled=orderPage>=lastPage;
+    $('#orders-page').textContent=`Página ${orderPage+1} de ${lastPage+1}`;
+  }catch(error){
+    if(seq!==orderLoad||overview!=='reports')return;
+    ordersStatus.textContent=error.status===404?'Atualize o servidor de licenças para consultar todos os pedidos.':error.message;
+    ordersStatus.classList.add('error');
+    result.innerHTML='<button type="button">Tentar novamente</button>';
+    result.querySelector('button').onclick=()=>loadOrders(page);
+  }finally{
+    if(seq===orderLoad)result.removeAttribute('aria-busy');
+  }
+}
+ordersFilters.addEventListener('input',()=>ordersFilters.elements.to.setCustomValidity(''));
+ordersFilters.onsubmit=event=>{
+  event.preventDefault();
+  const {from,to,state}=ordersFilters.elements;
+  if(from.value&&to.value&&from.value>to.value){
+    to.setCustomValidity('A data final deve ser igual ou posterior à inicial.');to.reportValidity();return;
+  }
+  orderQuery={state:state.value,...(from.value?{from:from.value}:{}),...(to.value?{to:to.value}:{})};
+  orderPage=0;loadOrders();
+};
+$('#orders-prev').onclick=()=>loadOrders(orderPage-1);
+$('#orders-next').onclick=()=>loadOrders(orderPage+1);
+
+function paymentRow(row){
+  const state=Object.hasOwn(paymentState,row.state)?row.state:'pending';
+  const fact=(label,value)=>value?`<dt>${label}</dt><dd>${esc(value)}</dd>`:'';
+  const dates=state==='pending'||state==='expired'
+    ? fact('Validade',paymentDate.format(row.validUntil*1000))
+    : row.confirmedAt?fact('Confirmado em',paymentDate.format(row.confirmedAt*1000)):'';
+  const amount=row.confirmedAmount&&row.confirmedAmount!==row.amount?
+    fact('Valor na InfinitePay',paymentMoney.format(row.confirmedAmount/100)):'';
+  const action=state==='pending'||state==='expired'?'Conferir na InfinitePay':state==='needs_review'?'Registrar resolução':'';
+  const resolution=Object.hasOwn(paymentResolution,row.resolution)?paymentResolution[row.resolution]:'';
+  const reason=Object.hasOwn(paymentReasons,row.reviewReason)?paymentReasons[row.reviewReason]:'';
+  return `<li class="payment-row" data-order="${esc(row.id)}"><header><strong>${row.period==='month'?'Mensal':'Anual'} · ${paymentMoney.format(row.amount/100)}</strong><span class="badge b-${state}">${paymentState[state]}</span></header>
+    <dl class="facts">${fact('MAC',row.mac)}${fact('Pedido',row.id)}${dates}${amount}${fact('Transação',row.transaction)}${fact('Fatura',row.slug)}${fact('Motivo',reason)}${fact('Resolução',resolution)}</dl>
+    ${action?`<button type="button" data-payment-action="${state==='needs_review'?'resolve':'recheck'}">${action}</button>`:''}</li>`;
+}
+function showPaymentMessage(text,error=false){
+  paymentMessage.textContent=text;
+  paymentMessage.classList.toggle('error',error);
+}
+function closePaymentAction(){paymentAction.hidden=true;selectedPayment=null;}
+
+async function loadPayments(){
+  const seq=++paymentLoad,params=new URLSearchParams(new FormData(paymentFilters));
+  params.set('page',String(paymentPage));
+  showPaymentMessage('Carregando cobranças…');
+  $('#payments-paging').hidden=true;
+  paymentList.replaceChildren();
+  try{
+    const {orders,hasMore}=await api('/api/admin/payments?'+params);
+    if(seq!==paymentLoad||!paymentsDialog.open)return;
+    showPaymentMessage(orders.length?'':'Nenhuma cobrança neste filtro.');
+    paymentList.innerHTML=orders.map(paymentRow).join('');
+    $('#payments-paging').hidden=paymentPage===0&&!hasMore;
+    $('#payments-prev').disabled=paymentPage===0;
+    $('#payments-next').disabled=!hasMore;
+    $('#payments-page').textContent='Página '+(paymentPage+1);
+  }catch(error){
+    if(seq===paymentLoad&&paymentsDialog.open)
+      showPaymentMessage(error.status===404?'Atualize o servidor de licenças para abrir a conciliação.':error.message,true);
+  }
+}
+$('#payments').onclick=()=>{
+  paymentFilters.reset();paymentPage=0;closePaymentAction();
+  paymentsDialog.showModal();loadPayments();
+};
+paymentFilters.onsubmit=event=>{event.preventDefault();if(!paymentWriting){paymentPage=0;closePaymentAction();loadPayments();}};
+$('#payments-prev').onclick=()=>{if(!paymentWriting){paymentPage--;closePaymentAction();loadPayments();}};
+$('#payments-next').onclick=()=>{if(!paymentWriting){paymentPage++;closePaymentAction();loadPayments();}};
+paymentList.onclick=event=>{
+  const button=event.target.closest('[data-payment-action]');
+  if(!button||paymentWriting)return;
+  const mode=button.dataset.paymentAction;
+  selectedPayment=button.closest('[data-order]').dataset.order;
+  for(const [name,form] of [['recheck',recheckForm],['resolve',resolveForm]]){
+    form.reset();form.hidden=name!==mode;
+  }
+  paymentAction.hidden=false;
+  paymentAction.querySelector('form:not([hidden]) :is(input,select)').focus();
+};
+paymentAction.querySelectorAll('[data-cancel-payment]').forEach(button=>button.onclick=()=>{if(!paymentWriting)closePaymentAction();});
+for(const [mode,form] of [['recheck',recheckForm],['resolve',resolveForm]]){
+  form.onsubmit=async event=>{
+    event.preventDefault();
+    if(paymentWriting||!selectedPayment)return;
+    const data=Object.fromEntries([...new FormData(form)].map(([name,value])=>[name,value.trim()]));
+    paymentWriting=true;
+    const submit=event.submitter;
+    submit.disabled=true;
+    showPaymentMessage(mode==='recheck'?'Consultando a InfinitePay…':'Salvando a resolução…');
+    try{
+      const {order}=await api('/api/admin/payments/'+mode,{id:selectedPayment,...data});
+      closePaymentAction();
+      await loadPayments();
+      if(paymentsDialog.open)showPaymentMessage(mode==='resolve'?'Revisão registrada.':
+        order.state==='needs_review'?'Pagamento confirmado e encaminhado para revisão.':'Pagamento conferido.');
+      if(order.state==='paid')await load();
+      if(overview==='reports')loadOrders(orderPage);
+    }catch(error){if(paymentsDialog.open)showPaymentMessage(error.message,true);}
+    finally{paymentWriting=false;submit.disabled=false;}
+  };
+}
+paymentsDialog.addEventListener('close',()=>{paymentLoad++;closePaymentAction();});
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 $('#search').oninput=render;
-$('#refresh').onclick=()=>load().catch(e=>toast(e.message,true));
+$('#refresh').onclick=()=>{
+  load().catch(e=>toast(e.message,true));
+  if(overview==='reports')loadOrders(orderPage);
+};
 $('#logout').onclick=()=>{store.clear();location.reload();};
 async function enter(){
   try{await load();$('#login').hidden=true;$('#login-error').hidden=true;$('#app').hidden=false;$('#session').hidden=false;clearInterval(timer);timer=setInterval(()=>{if(!document.hidden&&!document.querySelector('dialog[open]'))load().catch(()=>{});},30000);return true;}
