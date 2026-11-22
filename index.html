@@ -26,7 +26,7 @@ label input{margin-top:5px;font-weight:400}
 .mark{width:36px;height:36px;border-radius:50%;background:#fff;color:var(--navy);border:4px solid var(--lane);display:grid;place-items:center;font:800 17px/1 system-ui}
 .top h1{font-size:18px}
 .top small{display:block;color:#b9c6e2;font-weight:400}
-.top .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.top .right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .top button{background:transparent;color:#fff;border-color:#3a4c75}
 main{max-width:1180px;margin:auto;padding:22px 20px 40px}
 .login{max-width:440px;margin:40px auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:grid;gap:14px}
@@ -67,6 +67,9 @@ dialog{border:0;border-radius:16px;padding:22px;width:min(440px,calc(100vw - 24p
 dialog::backdrop{background:rgba(10,16,28,.55)}
 dialog form{display:grid;gap:14px}
 .dialog-actions{display:flex;justify-content:flex-end;gap:10px}
+#billing-dialog fieldset{border:0;padding:0;margin:0;min-width:0;display:grid;gap:14px}
+#billing-dialog .hint{display:block;color:var(--muted);font-size:13px}
+.prices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;border-left:5px solid var(--lane);font-weight:550;max-width:calc(100vw - 24px);z-index:9}
 #toast.err{background:#8f2318}
 footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px}
@@ -74,7 +77,7 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px
 </style>
 </head>
 <body>
-<header class="top"><div class="top-in"><span class="mark">E</span><h1>Painel de licenças<small>Placas do sistema de estacionamento</small></h1><div class="right" id="session" hidden><span id="updated" class="mac" style="color:#b9c6e2"></span><button id="refresh">Atualizar</button><button id="logout">Sair</button></div></div></header>
+<header class="top"><div class="top-in"><span class="mark">E</span><h1>Painel de licenças<small>Placas do sistema de estacionamento</small></h1><div class="right" id="session" hidden><span id="updated" class="mac" style="color:#b9c6e2"></span><button id="billing" type="button">Pagamentos</button><button id="refresh">Atualizar</button><button id="logout">Sair</button></div></div></header>
 <main>
   <form class="login" id="login">
     <h2>Entrar no painel</h2>
@@ -94,6 +97,23 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px
 <footer>Sistema criado por Felipe Bruno</footer>
 <dialog id="days-dialog"><form id="days-form"><h2>Liberar por dias</h2><p id="days-for" class="mac"></p><label>Quantos dias<input name="days" type="number" min="1" max="3660" step="1" value="15" required></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Liberar</button></div></form></dialog>
 <dialog id="edit-dialog"><form id="edit-form"><h2>Editar placa</h2><p id="edit-for" class="mac"></p><label>Observação (só aparece aqui)<input name="note" maxlength="200" placeholder="Ex.: cliente, telefone, forma de pagamento"></label><label>Liberada até<input name="date" type="date"></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Salvar</button></div></form></dialog>
+<dialog id="billing-dialog" aria-labelledby="billing-title">
+  <form id="billing-form" autocomplete="off">
+    <div><h2 id="billing-title">Pagamentos da licença</h2><p class="hint">A placa oferece renovação pela InfinitePay quando a licença vence.</p></div>
+    <fieldset id="billing-fields" disabled>
+      <label class="check"><input type="checkbox" name="enabled">Oferecer pagamento pela InfinitePay</label>
+      <label>InfiniteTag<input name="handle" maxlength="81" placeholder="$sualoja" autocapitalize="off" spellcheck="false"></label>
+      <label>Chave da API<input name="apiKey" type="password" maxlength="246" autocomplete="new-password" spellcheck="false" aria-describedby="billing-key-hint"></label>
+      <p class="hint" id="billing-key-hint">A chave fica guardada no servidor de licenças.</p>
+      <div class="prices">
+        <label>Mensal (R$)<input name="monthlyCents" inputmode="decimal" maxlength="16" placeholder="100,00"></label>
+        <label>Anual (R$)<input name="yearlyCents" inputmode="decimal" maxlength="16" placeholder="1.200,00"></label>
+      </div>
+    </fieldset>
+    <p id="billing-message" class="hint" aria-live="polite" hidden></p>
+    <div class="dialog-actions"><button type="button" data-close>Cancelar</button><button id="billing-save" class="primary" disabled>Salvar</button></div>
+  </form>
+</dialog>
 <div id="toast" role="status" hidden></div>
 <script>
 'use strict';
@@ -106,8 +126,18 @@ const planName={month:'mensal',year:'anual',days:'por dias'};
 const day=t=>new Date(t*1000).toLocaleDateString('pt-BR');
 const when=t=>{if(!t)return 'nunca';const s=serverTime-t;if(s<90)return 'agora há pouco';if(s<3600)return `há ${Math.round(s/60)} min`;if(s<86400)return `há ${Math.round(s/3600)} h`;return `há ${Math.round(s/86400)} dias (${day(t)})`;};
 function toast(t,err){clearTimeout(toastTimer);$('#toast').textContent=t;$('#toast').className=err?'err':'';$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,err?9000:4500);}
+const billingPath='/api/admin/billing';
 async function api(path,body){
-  const r=await fetch(server.replace(/\/+$/,'')+path,{method:body===undefined?'GET':'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
+  let target=server.replace(/\/+$/,'')+path;
+  const billingRequest=path===billingPath;
+  if(billingRequest){
+    const url=new URL(server);
+    if(url.protocol!=='https:'||url.username||url.password||url.pathname!=='/'||url.search||url.hash){
+      throw new Error('Entre com o endereço HTTPS do servidor de licenças para configurar pagamentos.');
+    }
+    target=new URL(path,url.origin);
+  }
+  const r=await fetch(target,{method:body===undefined?'GET':'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:billingRequest?'error':'follow'});
   const j=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));
   if(!r.ok){const e=new Error(j.error||'Falha no servidor');e.status=r.status;throw e;}
   return j;
@@ -157,6 +187,103 @@ async function act(what,mac,btn){
 }
 $('#days-form').onsubmit=async e=>{e.preventDefault();try{await api('/api/admin/grant',{mac:target,period:'days',days:Number(e.target.days.value)});$('#days-dialog').close();toast(`Liberada por mais ${e.target.days.value} dias.`);await load();}catch(err){toast(err.message,true);}};
 $('#edit-form').onsubmit=async e=>{e.preventDefault();const f=e.target,body={mac:target,note:f.note.value};if(f.date.value)body.expires=Math.floor(Date.parse(f.date.value+'T23:59:59-03:00')/1000);try{await api('/api/admin/update',body);$('#edit-dialog').close();toast('Placa atualizada.');await load();}catch(err){toast(err.message,true);}};
+const billingDialog=$('#billing-dialog');
+const billingForm=$('#billing-form');
+const billingFields=$('#billing-fields');
+const billingSave=$('#billing-save');
+const brlValue=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+let billingConfig, billingLoadId=0, billingSaving=false;
+
+function billingMessage(text,error=false){
+  const message=$('#billing-message');
+  message.textContent=text;
+  message.className=error?'error':'hint';
+  message.hidden=!text;
+}
+
+function setBillingFormEnabled(enabled){
+  billingFields.disabled=!enabled;
+  billingSave.disabled=!enabled;
+}
+
+function parseCents(value,label){
+  const input=value.trim();
+  if(!input) return 0;
+  const brazilian=/^(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?$/;
+  const dotDecimal=/^\d+\.\d{1,2}$/;
+  if(!brazilian.test(input)&&!dotDecimal.test(input)) throw new Error(`Digite um valor válido no campo ${label}.`);
+  const normalized=brazilian.test(input)?input.replaceAll('.','').replace(',','.'):input;
+  const [reais,centavos='']=normalized.split('.');
+  const cents=Number(reais)*100+Number(centavos.padEnd(2,'0'));
+  if(cents<100||cents>999999999) throw new Error(`O valor ${label.toLowerCase()} deve ficar entre R$ 1,00 e R$ 9.999.999,99.`);
+  return cents;
+}
+
+function fillBilling(config){
+  const fields=billingForm.elements;
+  fields.enabled.checked=config.enabled;
+  fields.handle.value=config.handle?`$${config.handle}`:'';
+  fields.apiKey.value='';
+  fields.monthlyCents.value=config.monthlyCents?brlValue.format(config.monthlyCents/100):'';
+  fields.yearlyCents.value=config.yearlyCents?brlValue.format(config.yearlyCents/100):'';
+  $('#billing-key-hint').textContent=config.hasApiKey?'Chave configurada. Deixe o campo em branco para manter a chave atual.':'A chave fica guardada no servidor de licenças.';
+}
+
+$('#billing').onclick=async()=>{
+  const loadId=++billingLoadId;
+  billingForm.reset();
+  setBillingFormEnabled(false);
+  billingMessage('Carregando as configurações…');
+  billingDialog.showModal();
+  try{
+    const {billing}=await api(billingPath);
+    if(loadId!==billingLoadId||!billingDialog.open) return;
+    if(!billing||typeof billing.enabled!=='boolean') throw new Error('Resposta inválida do servidor.');
+    billingConfig=billing;
+    fillBilling(billingConfig);
+    billingMessage('');
+    setBillingFormEnabled(true);
+  }catch(e){
+    if(loadId!==billingLoadId||!billingDialog.open) return;
+    billingMessage(e.status===404?'Atualize o servidor de licenças para configurar pagamentos.':e.message,true);
+  }
+};
+
+billingForm.onsubmit=async event=>{
+  event.preventDefault();
+  if(billingSave.disabled) return;
+  const fields=billingForm.elements;
+  const enabled=fields.enabled.checked;
+  const handle=fields.handle.value.trim().replace(/^\$/,'');
+  const apiKey=fields.apiKey.value.trim();
+  try{
+    const monthlyCents=parseCents(fields.monthlyCents.value,'Mensal');
+    const yearlyCents=parseCents(fields.yearlyCents.value,'Anual');
+    if(handle&&!/^[A-Za-z0-9_.-]{1,80}$/.test(handle)) throw new Error('Digite uma InfiniteTag válida.');
+    if(enabled&&(!handle||!monthlyCents||!yearlyCents)) throw new Error('Preencha a InfiniteTag e os valores mensal e anual para ativar os pagamentos.');
+    if((enabled&&!billingConfig.hasApiKey||billingConfig.hasApiKey&&handle!==billingConfig.handle)&&!apiKey){
+      throw new Error('Informe a chave da API da InfinitePay para esta InfiniteTag.');
+    }
+    const body={enabled,handle,monthlyCents,yearlyCents};
+    if(apiKey) body.apiKey=apiKey;
+    billingSaving=true;
+    setBillingFormEnabled(false);
+    billingForm.querySelector('[data-close]').disabled=true;
+    billingMessage('Salvando as configurações…');
+    await api(billingPath,body);
+    fields.apiKey.value='';
+    billingDialog.close();
+    toast('Configurações de pagamento salvas.');
+  }catch(e){
+    billingMessage(e.message,true);
+  }finally{
+    billingSaving=false;
+    billingForm.querySelector('[data-close]').disabled=false;
+    setBillingFormEnabled(true);
+  }
+};
+billingDialog.addEventListener('cancel',event=>{if(billingSaving) event.preventDefault();});
+billingDialog.addEventListener('close',()=>{if(!billingDialog.open) billingForm.elements.apiKey.value='';});
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 $('#search').oninput=render;
 $('#refresh').onclick=()=>load().catch(e=>toast(e.message,true));
