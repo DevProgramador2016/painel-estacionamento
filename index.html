@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Painel de licenças · Estacionamento</title>
+<style>
+:root{--bg:#edf0f5;--surface:#fff;--surface-2:#f5f7fb;--ink:#16233f;--muted:#5b6880;--line:#d8deea;--brand:#1f56d8;--lane:#f6b60b;--lane-ink:#3a2a00;--ok:#157a43;--ok-soft:#dff4e7;--late:#c0392b;--late-soft:#fde8e5;--warn-soft:#fff4d6;--warn-ink:#6b4b00;--navy:#16233f}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+h1,h2,h3,p{margin:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 13px;font-weight:600;min-height:40px}
+button:hover{border-color:var(--brand)}
+button:disabled{opacity:.5;cursor:default}
+button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+button.danger{color:var(--late);border-color:var(--late)}
+:focus-visible{outline:3px solid var(--lane);outline-offset:2px}
+input,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;background:#fff}
+label{display:block;font-weight:600;font-size:13.5px}
+label input{margin-top:5px;font-weight:400}
+.top{background:var(--navy);color:#fff;border-bottom:4px solid var(--lane)}
+.top-in{max-width:1180px;margin:auto;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.mark{width:36px;height:36px;border-radius:50%;background:#fff;color:var(--navy);border:4px solid var(--lane);display:grid;place-items:center;font:800 17px/1 system-ui}
+.top h1{font-size:18px}
+.top small{display:block;color:#b9c6e2;font-weight:400}
+.top .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.top button{background:transparent;color:#fff;border-color:#3a4c75}
+main{max-width:1180px;margin:auto;padding:22px 20px 40px}
+.login{max-width:440px;margin:40px auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:grid;gap:14px}
+.login p{color:var(--muted);font-size:14px}
+.check{display:flex;gap:8px;align-items:center;font-weight:500}
+.check input{width:auto;min-height:0;margin:0}
+.error{color:var(--late);font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
+.stat span{color:var(--muted);font-size:13px}
+.stat strong{display:block;font-size:26px;font-variant-numeric:tabular-nums}
+.stat.wait{border-color:var(--lane);background:var(--warn-soft)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.tabs{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;flex-wrap:wrap}
+.tabs button{border:0;background:none;border-radius:9px;min-height:36px}
+.tabs button[aria-pressed=true]{background:var(--navy);color:#fff}
+.bar input{max-width:300px;margin-left:auto}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px}
+.card.asking{border:2px solid var(--lane);box-shadow:0 0 0 4px var(--warn-soft)}
+.card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.card h3{font-size:17px;overflow-wrap:anywhere}
+.mac{font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--muted);font-size:13.5px}
+.badge{border-radius:99px;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap}
+.b-active{background:var(--ok-soft);color:var(--ok)}
+.b-expired,.b-blocked{background:var(--late-soft);color:var(--late)}
+.b-none{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.ask{background:var(--lane);color:var(--lane-ink);border-radius:8px;padding:6px 10px;font-weight:700;font-size:13px}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:13.5px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;overflow-wrap:anywhere}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.actions .wide{grid-column:1/-1}
+.more{display:flex;flex-wrap:wrap;gap:6px}
+.more button{min-height:34px;padding:5px 10px;font-size:13px}
+.empty{text-align:center;color:var(--muted);padding:40px 10px;background:var(--surface);border:1px dashed var(--line);border-radius:14px}
+dialog{border:0;border-radius:16px;padding:22px;width:min(440px,calc(100vw - 24px))}
+dialog::backdrop{background:rgba(10,16,28,.55)}
+dialog form{display:grid;gap:14px}
+.dialog-actions{display:flex;justify-content:flex-end;gap:10px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;border-left:5px solid var(--lane);font-weight:550;max-width:calc(100vw - 24px);z-index:9}
+#toast.err{background:#8f2318}
+footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px}
+@media (max-width:720px){.stats{grid-template-columns:1fr 1fr}.bar input{max-width:none;margin-left:0}.list{grid-template-columns:1fr}.top .right{margin-left:0;width:100%}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in"><span class="mark">E</span><h1>Painel de licenças<small>Placas do sistema de estacionamento</small></h1><div class="right" id="session" hidden><span id="updated" class="mac" style="color:#b9c6e2"></span><button id="refresh">Atualizar</button><button id="logout">Sair</button></div></div></header>
+<main>
+  <form class="login" id="login">
+    <h2>Entrar no painel</h2>
+    <p>Use o endereço do seu servidor na Cloudflare e a senha do painel (o segredo ADMIN_TOKEN que você criou no Worker).</p>
+    <label>Endereço do servidor<input name="server" type="url" placeholder="https://estacionamento-licencas.seu-usuario.workers.dev" required></label>
+    <label>Senha do painel<input name="token" type="password" required autocomplete="current-password"></label>
+    <label class="check"><input type="checkbox" name="remember" checked>Lembrar neste aparelho</label>
+    <p class="error" id="login-error" hidden></p>
+    <button class="primary">Entrar</button>
+  </form>
+  <section id="app" hidden>
+    <div class="stats" id="stats"></div>
+    <div class="bar"><div class="tabs" id="tabs"></div><input id="search" type="search" placeholder="Buscar nome do estacionamento ou MAC" aria-label="Buscar"></div>
+    <div class="list" id="list"></div>
+  </section>
+</main>
+<footer>Sistema criado por Felipe Bruno</footer>
+<dialog id="days-dialog"><form id="days-form"><h2>Liberar por dias</h2><p id="days-for" class="mac"></p><label>Quantos dias<input name="days" type="number" min="1" max="3660" step="1" value="15" required></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Liberar</button></div></form></dialog>
+<dialog id="edit-dialog"><form id="edit-form"><h2>Editar placa</h2><p id="edit-for" class="mac"></p><label>Observação (só aparece aqui)<input name="note" maxlength="200" placeholder="Ex.: cliente, telefone, forma de pagamento"></label><label>Liberada até<input name="date" type="date"></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Salvar</button></div></form></dialog>
+<div id="toast" role="status" hidden></div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get(k){try{return localStorage.getItem(k)||sessionStorage.getItem(k);}catch{return null;}},set(k,v,keep){try{(keep?localStorage:sessionStorage).setItem(k,v);}catch{}},clear(){try{for(const s of [localStorage,sessionStorage]){s.removeItem('lic-server');s.removeItem('lic-token');}}catch{}}};
+let server=store.get('lic-server')||'',token=store.get('lic-token')||'',devices=[],serverTime=0,filter='all',timer,toastTimer;
+const statusName={active:'Liberada',expired:'Vencida',none:'Sem liberação',blocked:'Bloqueada'};
+const planName={month:'mensal',year:'anual',days:'por dias'};
+const day=t=>new Date(t*1000).toLocaleDateString('pt-BR');
+const when=t=>{if(!t)return 'nunca';const s=serverTime-t;if(s<90)return 'agora há pouco';if(s<3600)return `há ${Math.round(s/60)} min`;if(s<86400)return `há ${Math.round(s/3600)} h`;return `há ${Math.round(s/86400)} dias (${day(t)})`;};
+function toast(t,err){clearTimeout(toastTimer);$('#toast').textContent=t;$('#toast').className=err?'err':'';$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,err?9000:4500);}
+async function api(path,body){
+  const r=await fetch(server.replace(/\/+$/,'')+path,{method:body===undefined?'GET':'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
+  const j=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));
+  if(!r.ok){const e=new Error(j.error||'Falha no servidor');e.status=r.status;throw e;}
+  return j;
+}
+async function load(){
+  const j=await api('/api/admin/devices');devices=j.devices;serverTime=j.serverTime;
+  $('#updated').textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});render();
+}
+function counts(){const c={all:devices.length,asking:0,active:0,expired:0,blocked:0};for(const d of devices){if(d.requested&&d.status!=='active')c.asking++;if(d.status==='active')c.active++;if(d.status==='expired'||d.status==='none')c.expired++;if(d.status==='blocked')c.blocked++;}return c;}
+function render(){
+  const c=counts();
+  $('#stats').innerHTML=`<div class="stat"><span>Placas</span><strong>${c.all}</strong></div><div class="stat"><span>Liberadas</span><strong>${c.active}</strong></div><div class="stat"><span>Vencidas ou sem liberação</span><strong>${c.expired}</strong></div><div class="stat${c.asking?' wait':''}"><span>Pedindo acesso</span><strong>${c.asking}</strong></div>`;
+  $('#tabs').innerHTML=[['all','Todas'],['asking',`Pedidos (${c.asking})`],['active','Liberadas'],['expired','Vencidas'],['blocked','Bloqueadas']].map(([k,t])=>`<button type="button" data-filter="${k}" aria-pressed="${filter===k}">${t}</button>`).join('');
+  document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;render();});
+  const q=$('#search').value.trim().toLowerCase();
+  const list=devices.filter(d=>filter==='all'||(filter==='asking'?d.requested&&d.status!=='active':filter==='expired'?d.status==='expired'||d.status==='none':d.status===filter))
+    .filter(d=>!q||(d.name+' '+d.mac+' '+(d.note||'')).toLowerCase().includes(q))
+    .sort((a,b)=>(b.requested&&b.status!=='active')-(a.requested&&a.status!=='active')||(a.name||'').localeCompare(b.name||''));
+  $('#list').innerHTML=list.length?list.map(card).join(''):`<div class="empty">${devices.length?'Nenhuma placa neste filtro.':'Nenhuma placa registrada ainda. Ela aparece aqui na primeira vez que se conectar à internet.'}</div>`;
+  document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>act(b.dataset.act,b.dataset.mac,b));
+}
+function card(d){
+  const asking=d.requested&&d.status!=='active',left=d.expires?Math.ceil((d.expires-serverTime)/86400):0;
+  const until=d.expires?`${day(d.expires)}${d.status==='active'?` (${left} ${left===1?'dia':'dias'})`:''}`:'—';
+  return `<article class="card${asking?' asking':''}"><div class="card-top"><div><h3>${esc(d.name||'Sem nome do estacionamento')}</h3><div class="mac">MAC ${esc(d.mac)}</div></div><span class="badge b-${d.status}">${statusName[d.status]}</span></div>
+  ${asking?`<div class="ask">Pedindo acesso desde ${esc(when(d.requestedAt))}</div>`:''}
+  <dl class="facts"><dt>Liberada até</dt><dd>${until}${d.plan&&d.status==='active'?' · '+planName[d.plan]:''}</dd><dt>Última conexão</dt><dd>${esc(when(d.lastSeen))}${d.version?' · v'+esc(d.version):''}</dd>${d.note?`<dt>Observação</dt><dd>${esc(d.note)}</dd>`:''}${d.hasCode?'':'<dt>Código</dt><dd>troca liberada (a próxima placa que conectar com este MAC fica registrada)</dd>'}</dl>
+  <div class="actions"><button class="primary" data-act="month" data-mac="${d.mac}">Liberar 1 mês</button><button class="primary" data-act="year" data-mac="${d.mac}">Liberar 1 ano</button><button data-act="days" data-mac="${d.mac}">Dias…</button></div>
+  <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button>${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div></article>`;
+}
+let target='';
+async function act(what,mac,btn){
+  const d=devices.find(x=>x.mac===mac),name=d.name||mac;target=mac;
+  if(what==='days'){$('#days-for').textContent=`${name} · ${mac}`;$('#days-dialog').showModal();return;}
+  if(what==='edit'){const f=$('#edit-form');f.note.value=d.note||'';f.date.value=d.expires?new Date(d.expires*1000).toISOString().slice(0,10):'';$('#edit-for').textContent=`${name} · ${mac}`;$('#edit-dialog').showModal();return;}
+  const ask={block:`Bloquear ${name} agora? As novas entradas param assim que a placa consultar o servidor.`,reset:`Liberar a troca de código de ${name}? Use quando a placa foi regravada do zero ou trocada.`,delete:`Excluir ${name} do painel? Se ela conectar de novo, aparece como placa nova, sem liberação.`}[what];
+  if(ask&&!confirm(ask))return;
+  btn.disabled=true;
+  try{
+    if(what==='month'||what==='year')await api('/api/admin/grant',{mac,period:what});
+    else if(what==='block'||what==='unblock')await api('/api/admin/block',{mac,blocked:what==='block'});
+    else if(what==='reset')await api('/api/admin/reset-code',{mac});
+    else if(what==='delete')await api('/api/admin/delete',{mac});
+    toast({month:`${name}: liberada por mais 1 mês.`,year:`${name}: liberada por mais 1 ano.`,block:`${name}: bloqueada.`,unblock:`${name}: desbloqueada.`,reset:`${name}: troca de código liberada.`,delete:`${name}: excluída.`}[what]);
+    await load();
+  }catch(e){toast(e.message,true);btn.disabled=false;}
+}
+$('#days-form').onsubmit=async e=>{e.preventDefault();try{await api('/api/admin/grant',{mac:target,period:'days',days:Number(e.target.days.value)});$('#days-dialog').close();toast(`Liberada por mais ${e.target.days.value} dias.`);await load();}catch(err){toast(err.message,true);}};
+$('#edit-form').onsubmit=async e=>{e.preventDefault();const f=e.target,body={mac:target,note:f.note.value};if(f.date.value)body.expires=Math.floor(Date.parse(f.date.value+'T23:59:59-03:00')/1000);try{await api('/api/admin/update',body);$('#edit-dialog').close();toast('Placa atualizada.');await load();}catch(err){toast(err.message,true);}};
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+$('#search').oninput=render;
+$('#refresh').onclick=()=>load().catch(e=>toast(e.message,true));
+$('#logout').onclick=()=>{store.clear();location.reload();};
+async function enter(){
+  try{await load();$('#login').hidden=true;$('#login-error').hidden=true;$('#app').hidden=false;$('#session').hidden=false;clearInterval(timer);timer=setInterval(()=>{if(!document.hidden&&!document.querySelector('dialog[open]'))load().catch(()=>{});},30000);return true;}
+  catch(e){$('#login-error').textContent=e.status===401?'Senha do painel incorreta.':'Não foi possível falar com o servidor: '+e.message;$('#login-error').hidden=false;return false;}
+}
+$('#login').onsubmit=async e=>{e.preventDefault();const f=e.target;server=f.server.value.trim();token=f.token.value;if(await enter()){store.set('lic-server',server,f.remember.checked);store.set('lic-token',token,f.remember.checked);}};
+$('#login').server.value=server;
+if(server&&token)enter();
+</script>
+</body>
+</html>
