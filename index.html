@@ -408,7 +408,7 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
 @media (max-width: 850px) {
   #panel-overview { grid-template-columns: minmax(0,1fr); }
   #panel-overview > :not(.overview-nav), #panel-overview > .overview-nav { grid-row: auto; grid-column: 1; position: static; }
-  #area-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  #area-tabs { grid-template-columns: repeat(4,minmax(0,1fr)); }
   #area-tabs button { text-align: center; padding-inline: 7px; }
   #area-tabs button[aria-selected="true"] { box-shadow: inset 0 -2px #57a789; }
 }
@@ -462,6 +462,26 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
   .payments-dialog .payment-filters { grid-template-columns: minmax(0,1fr) auto; }
   .payment-filters label:first-child { grid-column: 1/-1; }
 }
+.finance-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 9px; }
+.finance-filters > label { flex: 1 1 145px; }
+.finance-month { display: grid; grid-template-columns: 42px minmax(0,1fr) 42px; align-items: end; gap: 6px; flex: 1 1 240px; min-width: 0; }
+.finance-month label { min-width: 0; }
+.finance-month input { padding-inline: 6px; }
+.finance-month button { min-height: 46px; padding-inline: 0; font-size: 21px; }
+.finance-overview, .finance-ledger { display: grid; gap: 10px; min-width: 0; }
+.finance-metrics, .finance-plans { display: grid; gap: 8px; grid-template-columns: repeat(2,minmax(0,1fr)); margin: 0; }
+.finance-metrics > div, .finance-plans > div { min-width: 0; padding: 11px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.finance-metrics dt, .finance-plans dt { color: var(--muted); font-size: 13px; }
+.finance-metrics dd, .finance-plans dd { margin: 2px 0 0; font-size: clamp(15px,3.8vw,22px); font-weight: 760; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.finance-metrics small, .finance-plans small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+.finance-metrics .finance-balance { border-color: #9cc9b7; background: var(--brand-soft); }
+.finance-daily { min-width: 0; padding: 11px; border: 1px solid var(--line); border-radius: 12px; }
+.finance-daily summary { cursor: pointer; font-weight: 650; }
+.finance-daily[open] summary { margin-bottom: 8px; }
+.finance-ledger .mac { overflow-wrap: anywhere; }
+#finance-status:empty { display: none; }
+@media (min-width: 950px) { .finance-metrics { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+@media (max-width: 440px) { #area-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (prefers-reduced-motion: reduce) { button { transition: none; } }
 @media print {
   body:has(#operation-receipt[open]) > *:not(#operation-receipt) { display: none !important; }
@@ -490,6 +510,7 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
       <button type="button" id="area-tab-movement" data-area="movement" role="tab" aria-controls="area-movement" aria-selected="true">Relatórios</button>
       <button type="button" id="area-tab-people" data-area="people" role="tab" aria-controls="area-people" aria-selected="false" tabindex="-1">Cadastros</button>
       <button type="button" id="area-tab-licenses" data-area="licenses" role="tab" aria-controls="area-licenses" aria-selected="false" tabindex="-1">Licenças</button>
+      <button type="button" id="area-tab-finance" data-area="finance" role="tab" aria-controls="area-finance" aria-selected="false" tabindex="-1">Financeiro</button>
     </div></nav>
     <div class="operation-target" id="operation-target"><label>Placa do estabelecimento<select id="operation-device"><option value="">Selecione uma placa</option></select></label><p id="operation-capability" role="status"></p></div>
     <section class="overview" id="area-movement" role="tabpanel" aria-labelledby="area-tab-movement">
@@ -525,6 +546,25 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
       <div class="operation-heading"><p class="hint" id="people-message" role="status"></p><button type="button" id="people-cancel" hidden>Cancelar consulta</button></div>
       <div class="operation-result" id="people-result"></div>
       <div class="order-paging" id="people-paging" hidden><button type="button" id="people-prev">Anterior</button><span id="people-page"></span><button type="button" id="people-next">Próxima</button></div>
+    </section>
+    <section class="overview" id="area-finance" role="tabpanel" aria-labelledby="area-tab-finance" hidden>
+      <div class="overview-top"><div><h2>Financeiro</h2><p>Vendas de licenças do estacionamento.</p></div><button type="button" id="finance-export" disabled>Exportar CSV</button></div>
+      <form class="finance-filters" id="finance-form">
+        <div class="finance-month"><button type="button" id="finance-month-prev" aria-label="Mês anterior">‹</button><label>Mês de referência<input name="month" type="month" required></label><button type="button" id="finance-month-next" aria-label="Mês seguinte">›</button></div>
+        <label>Movimentações<select name="kind"><option value="all">Todas</option><option value="received">Recebimentos</option><option value="refunded">Estornos</option><option value="pending">Pendências</option><option value="expired">Pedidos vencidos</option></select></label>
+        <button class="primary" type="submit">Consultar</button>
+      </form>
+      <section class="finance-overview" id="finance-summary" aria-label="Resumo financeiro do mês" hidden>
+        <dl class="finance-metrics" id="finance-metrics"></dl>
+        <p class="hint">O saldo apurado desconta os estornos registrados. Taxas e repasses da InfinitePay ficam fora deste cálculo.</p>
+        <dl class="finance-plans" id="finance-plans" aria-label="Receita confirmada por plano"></dl>
+      </section>
+      <details class="finance-daily" id="finance-daily" hidden><summary>Recebimentos e estornos por dia</summary><div id="finance-daily-result"></div></details>
+      <div class="finance-ledger">
+        <h3>Movimentações</h3><p id="finance-status" class="hint" role="status"></p>
+        <div id="finance-result"></div>
+        <div class="order-paging" id="finance-paging" aria-label="Páginas do financeiro" hidden><button id="finance-prev" type="button">Anterior</button><span id="finance-page"></span><button id="finance-next" type="button">Próxima</button></div>
+      </div>
     </section>
     <section id="area-licenses" role="tabpanel" aria-labelledby="area-tab-licenses" hidden>
     <nav class="overview-nav"><div class="tabs" id="overview-tabs" role="tablist" aria-label="Painel de licenças">
@@ -1390,6 +1430,163 @@ $('#clients-export').onclick=()=>{
 };
 
 const orderDate=value=>Number.isFinite(value)&&value>0?paymentDate.format(value*1000):'—';
+const financePath='/api/admin/finance';
+const financeForm=$('#finance-form'),financeExport=$('#finance-export');
+const finance={query:null,page:0,result:null,revision:0,loading:false,exporting:null};
+const financeKinds={received:['Recebimento','paid'],refunded:['Estorno','reviewed'],pending:['Pendente','pending'],expired:['Pedido vencido','expired']};
+const financeStates={paid:'Confirmado',needs_review:'Em revisão',reviewed:'Revisado',pending:'Aguardando pagamento',expired:'Prazo expirado',refunded:'Estorno registrado'};
+const financePlans={month:'Mensal',year:'Anual'};
+const financeCount=n=>Number.isSafeInteger(n)&&n>=0;
+const currentFinanceMonth=()=>editDate(serverTime||Math.floor(Date.now()/1000)).slice(0,7);
+const financeDay=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)?value.split('-').reverse().join('/'):'—';
+const financeMovementCount=n=>n+' '+(n===1?'movimentação':'movimentações');
+function financeStatus(message,error=false){
+  const status=$('#finance-status');
+  status.textContent=message;status.classList.toggle('error',error);
+}
+function financePageInfo(){
+  const {result}=finance;
+  return result?financeMovementCount(result.total)+(finance.query.kind==='all'?' no mês.':' no filtro selecionado.'):'';
+}
+function financeControls(){
+  const {month}=financeForm.elements, data=finance.result;
+  const current=Boolean(data)&&!finance.loading;
+  const pages=current?Math.max(1,Math.ceil(data.total/data.pageSize)):1;
+  $('#finance-month-prev').disabled=!month.value||month.value<=month.min;
+  $('#finance-month-next').disabled=!month.value||month.value>=month.max;
+  $('#finance-paging').hidden=!current||pages<=1;
+  $('#finance-page').textContent=current?'Página '+(finance.page+1)+' de '+pages:'';
+  $('#finance-prev').disabled=!current||finance.page===0;
+  $('#finance-next').disabled=!current||finance.page+1>=pages;
+  financeExport.disabled=!current||!data.total||Boolean(finance.exporting);
+}
+function financeRowStatus(row){
+  return financeStates[row.state]||(row.kind==='refunded'?'Estorno registrado':financeKinds[row.kind][0]);
+}
+function financeRequest(query,page){
+  return boundedOperationApi(financePath+'?'+new URLSearchParams({...query,page}));
+}
+function checkFinanceResult(value,query,page){
+  const validAmount=amount=>Number.isSafeInteger(amount);
+  const validGroup=group=>financeCount(group?.count)&&validAmount(group?.amount);
+  const summary=value?.summary,rows=value?.rows;
+  if(value?.month!==query.month||value.page!==page||!financeCount(value.total)||!financeCount(value.pageSize)||!value.pageSize||
+    !Array.isArray(rows)||rows.length!==Math.max(0,Math.min(value.pageSize,value.total-page*value.pageSize))||
+    !rows.every(row=>typeof row?.id==='string'&&row.id&&Object.hasOwn(financeKinds,row.kind)&&Number.isFinite(row.at)&&validAmount(row.amount))||
+    !summary||!validAmount(summary.balance)||!['received','refunded','pending','expired','review'].every(kind=>validGroup(summary[kind]))||
+    !['month','year'].every(plan=>validGroup(summary.byPlan?.[plan]))||
+    !Array.isArray(value.daily)||!value.daily.every(item=>financeDay(item?.date)!=='—'&&validAmount(item.received)&&validAmount(item.refunded)))
+    throw Error('O servidor devolveu o relatório financeiro incompleto. Consulte novamente.');
+  return value;
+}
+function renderFinance(data){
+  const {summary}=data;
+  const card=(label,amount,sub='',style='')=>'<div'+(style?' class="'+style+'"':'')+'><dt>'+label+'</dt><dd>'+
+    paymentMoney.format(amount/100)+'</dd>'+(sub?'<small>'+sub+'</small>':'')+'</div>';
+  const group=(label,item)=>card(label,item.amount,financeMovementCount(item.count));
+  $('#finance-metrics').innerHTML=group('Receita confirmada (bruta)',summary.received)+group('Estornos registrados',summary.refunded)+
+    card('Saldo apurado',summary.balance,'','finance-balance')+group('Pendências',summary.pending)+
+    group('Pedidos vencidos',summary.expired)+group('Receita em revisão',summary.review);
+  $('#finance-plans').innerHTML=group('Plano mensal',summary.byPlan.month)+group('Plano anual',summary.byPlan.year);
+  $('#finance-summary').hidden=false;
+  $('#finance-daily').hidden=false;
+  $('#finance-daily-result').innerHTML=overviewTable([['Dia'],['Recebido',true],['Estornado',true]],data.daily.map(item=>
+    '<tr><td data-label="Dia">'+financeDay(item.date)+'</td><td class="num" data-label="Recebido">'+paymentMoney.format(item.received/100)+'</td>'+
+    '<td class="num" data-label="Estornado">'+paymentMoney.format(item.refunded/100)+'</td></tr>').join(''));
+  $('#finance-result').innerHTML=data.rows.length?overviewTable([['Data'],['Estabelecimento'],['Plano'],['Tipo / situação'],['Valor',true],['Transação']],data.rows.map(row=>{
+    const [kind,style]=financeKinds[row.kind];
+    return '<tr><td data-label="Data">'+esc(orderDate(row.at))+'</td><td data-label="Estabelecimento"><div><strong>'+
+      esc(row.name||'Cadastro indisponível')+'</strong><small class="mac">'+esc(row.mac)+'</small></div></td><td data-label="Plano">'+
+      esc(financePlans[row.period]||'—')+'</td><td data-label="Tipo / situação"><div><span class="badge b-'+style+'">'+kind+'</span><small>'+
+      esc(financeRowStatus(row))+'</small></div></td><td class="num" data-label="Valor">'+paymentMoney.format(row.amount/100)+
+      '</td><td data-label="Transação"><span class="mac">'+esc(row.transaction||'—')+'</span></td></tr>';
+  }).join('')):'<p class="empty">Nenhuma movimentação neste filtro.</p>';
+  financeStatus(financePageInfo());
+}
+async function loadFinance(page=0){
+  if(activeArea!=='finance')return;
+  const {month,kind}=financeForm.elements;
+  month.max=currentFinanceMonth();
+  if(!month.value)month.value=month.max;
+  if(!financeForm.reportValidity())return;
+  const before=finance.query;
+  const same=before?.month===month.value&&before.kind===kind.value;
+  const query=same?before:{month:month.value,kind:kind.value};
+  if(!same){
+    page=0;finance.result=null;finance.exporting=null;
+    $('#finance-summary').hidden=$('#finance-daily').hidden=true;
+    $('#finance-daily').open=false;$('#finance-result').replaceChildren();
+  }
+  const revision=++finance.revision;
+  finance.query=query;finance.loading=true;
+  financeStatus('Consultando movimentações…');financeControls();
+  try{
+    let data=checkFinanceResult(await financeRequest(query,page),query,page);
+    if(revision!==finance.revision||activeArea!=='finance')return;
+    const last=Math.max(0,Math.ceil(data.total/data.pageSize)-1);
+    if(page>last){
+      page=last;data=checkFinanceResult(await financeRequest(query,page),query,page);
+      if(revision!==finance.revision||activeArea!=='finance')return;
+    }
+    finance.page=page;finance.result=data;renderFinance(data);
+  }catch(error){
+    if(revision===finance.revision&&activeArea==='finance')
+      financeStatus(error.name==='AbortError'?'A consulta demorou. Toque em Consultar para tentar novamente.':error.message,true);
+  }finally{
+    if(revision===finance.revision){finance.loading=false;financeControls();}
+  }
+}
+function leaveFinance(){
+  ++finance.revision;finance.loading=false;finance.exporting=null;financeControls();
+}
+function stepFinanceMonth(step){
+  const input=financeForm.elements.month;
+  if(!input.value)return;
+  const [year,month]=input.value.split('-').map(Number);
+  const next=new Date(Date.UTC(year,month-1+step,1)).toISOString().slice(0,7);
+  if(next>=input.min&&next<=input.max){input.value=next;loadFinance();}
+}
+financeForm.elements.month.min='2000-01';
+financeForm.onsubmit=event=>{event.preventDefault();loadFinance();};
+financeForm.onchange=()=>loadFinance();
+$('#finance-month-prev').onclick=()=>stepFinanceMonth(-1);
+$('#finance-month-next').onclick=()=>stepFinanceMonth(1);
+$('#finance-prev').onclick=()=>loadFinance(finance.page-1);
+$('#finance-next').onclick=()=>loadFinance(finance.page+1);
+financeExport.onclick=async()=>{
+  const {query}=finance;
+  if(!query||finance.exporting||!finance.result?.total)return;
+  const task={};finance.exporting=task;financeControls();
+  const current=()=>finance.exporting===task&&finance.query===query&&activeArea==='finance';
+  const rows=[],seen=new Set();
+  try{
+    let total,pageSize;
+    for(let page=0;;page++){
+      financeStatus('Preparando CSV… '+rows.length+' movimentações reunidas.');
+      const data=checkFinanceResult(await financeRequest(query,page),query,page);
+      if(!current())return;
+      if(page===0){total=data.total;pageSize=data.pageSize;}
+      if(data.total!==total||data.pageSize!==pageSize)throw Error('As movimentações mudaram durante a exportação. Tente novamente.');
+      for(const row of data.rows){
+        const key=[row.id,row.kind,row.at].join('|');
+        if(seen.has(key))throw Error('As movimentações mudaram durante a exportação. Tente novamente.');
+        seen.add(key);
+        rows.push([orderDate(row.at),row.name||'',row.mac||'',financePlans[row.period]||'',financeKinds[row.kind][0],financeRowStatus(row),
+          (row.amount/100).toFixed(2).replace('.',','),row.transaction||'',row.id,orderDate(row.issuedAt),orderDate(row.confirmedAt)]);
+      }
+      if(rows.length>=total)break;
+    }
+    if(!current())return;
+    if(!rows.length){financeStatus('Nenhuma movimentação para exportar.');return;}
+    downloadClientsCsv('financeiro-licencas-'+query.month+'-'+query.kind+'.csv',
+      ['Data da movimentação','Estabelecimento','MAC','Plano','Tipo','Situação','Valor (R$)','Transação','Pedido','Emitido em','Confirmado em'],rows);
+    financeStatus(financePageInfo());
+  }catch(error){
+    if(current())financeStatus(error.name==='AbortError'?'A exportação demorou. Tente novamente.':error.message,true);
+  }finally{
+    if(current()){finance.exporting=null;financeControls();}
+  }
+};
 function orderReportRow(order){
   const state=Object.hasOwn(paymentState,order.state)?order.state:'pending';
   const period=order.period==='month'?'Mensal':order.period==='year'?'Anual':'—';
@@ -1513,6 +1710,7 @@ boardSelect.onchange=()=>{
 };
 function showArea(area){
   if(area===activeArea)return;
+  if(activeArea==='finance')leaveFinance();
   if(activeArea==='movement'&&motion.loading)resetOperation('motion');
   if(activeArea==='people'&&people.loading)resetOperation('people');
   if(activeArea==='licenses'){++orderLoad;clearTimeout(firmware.poll);}
@@ -1522,8 +1720,9 @@ function showArea(area){
     button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
     document.getElementById(button.getAttribute('aria-controls')).hidden=!selected;
   }
-  $('#operation-target').hidden=area==='licenses';
+  $('#operation-target').hidden=area==='licenses'||area==='finance';
   if(area==='licenses')showOverview(overview);
+  if(area==='finance')loadFinance();
   operationReadiness();
 }
 for(const [index,button] of areaButtons.entries()){
@@ -1992,6 +2191,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('di
 $('#search').oninput=render;
 $('#refresh').onclick=()=>{
   load().catch(e=>toast(e.message,true));
+  if(activeArea==='finance')loadFinance(finance.page);
   if(activeArea==='licenses'&&overview==='reports')loadOrders(orderPage);
   if(firmwareViewOpen())loadFirmwareOverview();
   if(activeArea==='movement'&&motion.query)loadMotion(motion.page);
