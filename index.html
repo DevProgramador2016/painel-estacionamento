@@ -366,6 +366,14 @@ dialog {
 }
 dialog::backdrop { background: #102938a6; }
 dialog form { display: grid; gap: 14px; min-width: 0; }
+.access-action { justify-self: start; min-height: 44px; padding-inline: 4px; background: transparent; border-color: transparent; color: var(--brand); }
+.access-forms { display: grid; gap: 16px; margin-top: 12px; }
+.access-forms form { padding: 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-2); }
+.access-forms h3 { font-size: 17px; }
+.access-forms label, .access-recovery label { overflow-wrap: anywhere; }
+.access-code { display: grid; gap: 12px; }
+#access-code-value { box-sizing: border-box; width: 100%; min-width: 0; min-height: 74px; padding: 9px; resize: vertical; font: 15px/1.45 ui-monospace,Consolas,monospace; overflow-wrap: anywhere; }
+#access-code-status:empty { display: none; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; padding-top: 5px; }
 #billing-dialog fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 14px; }
 .prices { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
@@ -493,7 +501,7 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
 </style>
 </head>
 <body>
-<header class="top"><div class="top-in"><span class="mark">E</span><h1>Painel de licenças<small>Placas do sistema de estacionamento</small></h1><div class="right" id="session" hidden><span id="updated" class="mac" style="color:#b9c6e2"></span><button id="billing" type="button">Pagamentos</button><button id="payments" type="button">Conciliação</button><button id="refresh">Atualizar</button><button id="logout">Sair</button></div></div></header>
+<header class="top"><div class="top-in"><span class="mark">E</span><h1>Painel de licenças<small>Placas do sistema de estacionamento</small></h1><div class="right" id="session" hidden><span id="updated" class="mac" style="color:#b9c6e2"></span><button id="billing" type="button">Pagamentos</button><button id="payments" type="button">Conciliação</button><button id="access-settings" type="button">Acesso ao painel</button><button id="refresh">Atualizar</button><button id="logout">Sair</button></div></div></header>
 <main>
   <form class="login" id="login">
     <h2>Entrar no painel</h2>
@@ -502,7 +510,8 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
     <label>Senha do painel<input name="token" type="password" required autocomplete="current-password"></label>
     <label class="check"><input type="checkbox" name="remember">Lembrar neste aparelho</label>
     <p class="error" id="login-error" hidden></p>
-    <button class="primary">Entrar</button>
+    <button class="primary" type="submit">Entrar</button>
+    <button id="forgot-password" class="access-action" type="button">Esqueci a senha</button>
   </form>
   <section id="app" hidden>
     <div id="panel-overview">
@@ -697,6 +706,48 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
   <ul class="payments-list" id="payments-list"></ul>
   <div class="payments-paging" id="payments-paging" hidden><button type="button" id="payments-prev">Anterior</button><span id="payments-page"></span><button type="button" id="payments-next">Próxima</button></div>
 </dialog>
+<dialog id="access-settings-dialog" aria-labelledby="access-settings-title">
+  <div class="payments-header"><h2 id="access-settings-title">Acesso ao painel</h2><button type="button" data-access-close aria-label="Fechar acesso">×</button></div>
+  <p class="hint" id="access-health" role="status"></p>
+  <div class="access-forms">
+    <form id="access-password-form" autocomplete="off">
+      <h3>Alterar senha</h3>
+      <label>Senha atual<input name="currentPassword" type="password" autocomplete="current-password" required></label>
+      <label>Nova senha<input name="newPassword" type="password" autocomplete="new-password" required aria-describedby="access-password-help"></label>
+      <small class="hint" id="access-password-help">Use de 12 a 128 caracteres.</small>
+      <label>Confirme a nova senha<input name="confirmation" type="password" autocomplete="new-password" required></label>
+      <p class="hint error" id="access-password-error" role="alert" hidden></p>
+      <button class="primary" type="submit">Alterar senha</button>
+    </form>
+    <form id="access-code-form" autocomplete="off">
+      <h3>Código de recuperação</h3>
+      <p class="hint">Guarde o código em local seguro. Ele aparece uma vez e permite recuperar o acesso. Ao gerar outro, o anterior deixa de funcionar.</p>
+      <label>Senha atual<input name="currentPassword" type="password" autocomplete="current-password" required></label>
+      <p class="hint error" id="access-code-error" role="alert" hidden></p>
+      <button type="submit" id="access-generate-code">Gerar código de recuperação</button>
+    </form>
+  </div>
+</dialog>
+<dialog id="access-recover-dialog" aria-labelledby="access-recover-title">
+  <form class="access-recovery" id="access-recover-form" autocomplete="off">
+    <h2 id="access-recover-title">Recuperar acesso</h2>
+    <p class="hint">Use o código que você guardou ao configurar o acesso. Se perdeu a senha e o código, procure o responsável pelo servidor de licenças.</p>
+    <label>Código de recuperação<input name="recoveryCode" required autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    <label>Nova senha<input name="newPassword" type="password" autocomplete="new-password" required aria-describedby="access-recover-help"></label>
+    <small class="hint" id="access-recover-help">Use de 12 a 128 caracteres.</small>
+    <label>Confirme a nova senha<input name="confirmation" type="password" autocomplete="new-password" required></label>
+    <p class="hint error" id="access-recover-error" role="alert" hidden></p>
+    <div class="dialog-actions"><button type="button" data-access-close>Cancelar</button><button type="submit" class="primary">Redefinir senha</button></div>
+  </form>
+</dialog>
+<dialog id="access-code-dialog" aria-labelledby="access-code-title">
+  <div class="access-code"><h2 id="access-code-title">Guarde o código de recuperação</h2>
+    <p class="hint">Copie este código e salve em local seguro antes de fechar.</p>
+    <label>Código de recuperação<textarea id="access-code-value" readonly spellcheck="false" autocomplete="off" rows="3"></textarea></label>
+    <p class="hint" id="access-code-status" role="status"></p>
+    <div class="dialog-actions"><button type="button" id="access-copy-code">Copiar código</button><button type="button" class="primary" id="access-code-close">Concluir</button></div>
+  </div>
+</dialog>
 <div id="toast" role="status" hidden></div>
 <dialog id="operation-receipt" class="remote-receipt" aria-labelledby="operation-receipt-title">
   <header class="payments-header"><h2 id="operation-receipt-title">Comprovante</h2><button type="button" data-close aria-label="Fechar comprovante">×</button></header>
@@ -707,8 +758,29 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
 'use strict';
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const store={get(k){try{return sessionStorage.getItem(k)||localStorage.getItem(k);}catch{return null;}},set(k,v,keep){try{(keep?localStorage:sessionStorage).setItem(k,v);(keep?sessionStorage:localStorage).removeItem(k);}catch{}},clear(){try{for(const s of [localStorage,sessionStorage]){s.removeItem('lic-server');s.removeItem('lic-token');}}catch{}}};
-let server=store.get('lic-server')||'',token=store.get('lic-token')||'',devices=[],serverTime=0,filter='all',overview='devices',activeArea='movement',timer,toastTimer;
+const isAccessSession=value=>typeof value==='string'&&/^park-session-v2\.[a-f0-9]{32}\.\d{1,13}\.[a-f0-9]{32}\.[a-f0-9]{64}$/.test(value);
+const accessSessionKey='lic-session-v2',legacyAccessKey='lic-token',serverStorageKey='lic-server';
+const readAccessValue=(persisted,key)=>{try{return (persisted?localStorage:sessionStorage).getItem(key)||'';}catch{return '';}};
+const removeAccessValue=(persisted,key)=>{try{(persisted?localStorage:sessionStorage).removeItem(key);}catch{}};
+const store={
+  read(){
+    const stored=[false,true].flatMap(remember=>[accessSessionKey,legacyAccessKey].map(key=>({remember,key,value:readAccessValue(remember,key)})));
+    for(const remember of [false,true])removeAccessValue(remember,legacyAccessKey);
+    const saved=stored.find(item=>isAccessSession(item.value))||stored.find(item=>item.key===legacyAccessKey&&item.value);
+    return saved?{value:saved.value,remember:saved.remember,legacy:!isAccessSession(saved.value)}:null;
+  },
+  set(value,remember){
+    if(!isAccessSession(value))return false;
+    try{
+      const use=remember?localStorage:sessionStorage,other=remember?sessionStorage:localStorage;
+      use.setItem(accessSessionKey,value);use.setItem(serverStorageKey,server);
+      other.removeItem(accessSessionKey);other.removeItem(serverStorageKey);
+      return true;
+    }catch{return false;}
+  },
+  clear(){for(const remember of [false,true]){removeAccessValue(remember,accessSessionKey);removeAccessValue(remember,legacyAccessKey);}},
+};
+let server=readAccessValue(false,serverStorageKey)||readAccessValue(true,serverStorageKey),token='',devices=[],serverTime=0,filter='all',overview='devices',activeArea='movement',timer,toastTimer;
 const statusName={active:'Liberada',expired:'Vencida',none:'Sem liberação',blocked:'Bloqueada'};
 const planName={month:'mensal',year:'anual',days:'por dias'};
 const timeZone='America/Sao_Paulo';
@@ -723,36 +795,84 @@ const when=t=>{if(!t)return 'nunca';const s=serverTime-t;if(s<90)return 'agora h
 function toast(t,err){clearTimeout(toastTimer);$('#toast').textContent=t;$('#toast').className=err?'err':'';$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,err?9000:4500);}
 const billingPath='/api/admin/billing';
 const firmwarePath='/api/admin/firmware/';
+const accessPath='/api/admin/access/';
+const publicAccessRequest=path=>path===accessPath+'login'||path===accessPath+'recover';
+const repeatsAccessPassword=path=>path===accessPath+'change'||path===accessPath+'recovery-code';
 async function api(path,body,signal){
   const url=new URL(server);
-  const secureRequest=path===billingPath||path.startsWith('/api/admin/maintenance/')||path.startsWith(firmwarePath);
+  const secureRequest=path===billingPath||path.startsWith('/api/admin/maintenance/')||path.startsWith(firmwarePath)||path.startsWith(accessPath);
   const local=url.protocol==='http:'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname);
   if((url.protocol!=='https:'&&(!local||secureRequest))||url.username||url.password||url.pathname!=='/'||url.search||url.hash){
     throw new Error('Entre com o endereço HTTPS do servidor de licenças.');
   }
   const binary=body instanceof Blob;
-  const r=await fetch(new URL(path,url.origin),{method:body===undefined?'GET':'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':binary?'application/octet-stream':'application/json'},body:binary?body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:'error',signal});
+  const currentToken=token,headers={'Content-Type':binary?'application/octet-stream':'application/json'};
+  if(currentToken&&!publicAccessRequest(path))headers.Authorization='Bearer '+currentToken;
+  const r=await fetch(new URL(path,url.origin),{method:body===undefined?'GET':'POST',headers,body:binary?body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:'error',signal});
   const j=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));
+  if(r.status===401&&currentToken&&token===currentToken&&!publicAccessRequest(path)&&!repeatsAccessPassword(path))
+    endAccess('Sessão encerrada. Entre novamente para continuar.');
   if(!r.ok){const e=new Error(j.error||'Falha no servidor');e.status=r.status;throw e;}
   return j;
 }
+let presenceSnapshot=null,presenceInFlight=false;
+function mergePresence(){
+  if(!presenceSnapshot||presenceSnapshot.origin!==server)return false;
+  const time=Math.max(serverTime,presenceSnapshot.time+(performance.now()-presenceSnapshot.observedAt)/1000);
+  let changed=false;
+  for(const device of devices){
+    const sample=presenceSnapshot.boards.get(device.mac);
+    const heartbeat=sample?.lastHeartbeat??0, online=Boolean(sample&&sample.expiresAt>time);
+    changed=changed||heartbeat!==device.lastHeartbeat||online!==device.online;
+    device.lastHeartbeat=heartbeat;
+    device.online=online;
+  }
+  return changed;
+}
+async function refreshPresence(){
+  if(!token||document.hidden||presenceInFlight)return;
+  presenceInFlight=true;
+  const credential=token,origin=server;
+  try{
+    const sample=await boundedOperationApi('/api/admin/presence');
+    if(credential!==token||origin!==server||!Array.isArray(sample.devices)||!Number.isFinite(sample.serverTime))return;
+    const boards=new Map(sample.devices.filter(board=>typeof board.mac==='string'&&Number.isFinite(board.lastHeartbeat)&&Number.isFinite(board.expiresAt))
+      .map(board=>[board.mac,board]));
+    serverTime=Math.max(serverTime,sample.serverTime);
+    presenceSnapshot={origin,boards,time:sample.serverTime,observedAt:performance.now()};
+  }catch{}finally{
+    presenceInFlight=false;
+    if(credential===token&&origin===server&&mergePresence()){
+      if(activeArea==='licenses'&&overview==='devices'&&!maintenanceMac)render();
+      operationReadiness();
+      if(firmwareViewOpen())renderFirmwareBoards();
+    }
+  }
+}
+function watchPresence(){
+  if(!$('#app').hidden&&(activeArea==='movement'||activeArea==='people'||activeArea==='licenses'))void refreshPresence();
+}
+setInterval(watchPresence,8000);
+document.addEventListener('visibilitychange',watchPresence);
 async function load(){
   const j=await api('/api/admin/devices');devices=j.devices;serverTime=j.serverTime;
+  mergePresence();
   $('#updated').textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   refreshRemoteDevices();
   if(activeArea==='licenses'&&overview==='devices')render();
   if(activeArea==='licenses'&&overview==='clients')renderClients();
   if(firmwareViewOpen()){renderFirmwareBoards();refreshFirmwareJobs();}
   if(maintenanceMac){restoreMaintenanceRoute();showMaintenanceStatus(maintenanceMac);}
+  if(activeArea!=='finance')void refreshPresence();
 }
-function counts(){const c={all:devices.length,asking:0,active:0,expired:0,blocked:0};for(const d of devices){if(d.requested&&d.status!=='active')c.asking++;if(d.status==='active')c.active++;if(d.status==='expired'||d.status==='none')c.expired++;if(d.status==='blocked')c.blocked++;}return c;}
+function counts(){const c={all:devices.length,online:0,asking:0,active:0,expired:0,blocked:0};for(const d of devices){if(d.online===true)c.online++;if(d.requested&&d.status!=='active')c.asking++;if(d.status==='active')c.active++;if(d.status==='expired'||d.status==='none')c.expired++;if(d.status==='blocked')c.blocked++;}return c;}
 function render(){
   const c=counts();
   $('#stats').innerHTML=`<div class="stat"><span>Placas</span><strong>${c.all}</strong></div><div class="stat"><span>Liberadas</span><strong>${c.active}</strong></div><div class="stat"><span>Vencidas ou sem liberação</span><strong>${c.expired}</strong></div><div class="stat${c.asking?' wait':''}"><span>Pedindo acesso</span><strong>${c.asking}</strong></div>`;
-  $('#tabs').innerHTML=[['all','Todas'],['asking',`Pedidos (${c.asking})`],['active','Liberadas'],['expired','Vencidas'],['blocked','Bloqueadas']].map(([k,t])=>`<button type="button" data-filter="${k}" aria-pressed="${filter===k}">${t}</button>`).join('');
+  $('#tabs').innerHTML=[['all','Todas'],['online',`Online (${c.online})`],['asking',`Pedidos (${c.asking})`],['active','Liberadas'],['expired','Vencidas'],['blocked','Bloqueadas']].map(([k,t])=>`<button type="button" data-filter="${k}" aria-pressed="${filter===k}">${t}</button>`).join('');
   document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;render();});
   const q=$('#search').value.trim().toLowerCase();
-  const list=devices.filter(d=>filter==='all'||(filter==='asking'?d.requested&&d.status!=='active':filter==='expired'?d.status==='expired'||d.status==='none':d.status===filter))
+  const list=devices.filter(d=>filter==='all'||(filter==='online'?d.online===true:filter==='asking'?d.requested&&d.status!=='active':filter==='expired'?d.status==='expired'||d.status==='none':d.status===filter))
     .filter(d=>!q||(d.name+' '+d.mac+' '+(d.note||'')).toLowerCase().includes(q))
     .sort((a,b)=>(b.requested&&b.status!=='active')-(a.requested&&a.status!=='active')||(a.name||'').localeCompare(b.name||''));
   $('#list').innerHTML=list.length?list.map(card).join(''):`<div class="empty">${devices.length?'Nenhuma placa neste filtro.':'Nenhuma placa registrada ainda. Ela aparece aqui na primeira vez que se conectar à internet.'}</div>`;
@@ -761,9 +881,11 @@ function render(){
 function card(d){
   const asking=d.requested&&d.status!=='active',left=d.expires?Math.ceil((d.expires-serverTime)/86400):0;
   const until=d.expires?`${day(d.expires)}${d.status==='active'?` (${left} ${left===1?'dia':'dias'})`:''}`:'—';
+  const presenceLabel=d.online===true?'Online':d.lastHeartbeat>0?'Offline':'Sem sinal';
   return `<article class="card${asking?' asking':''}"><div class="card-top"><div><h3>${esc(d.name||'Sem nome do estacionamento')}</h3><div class="mac">MAC ${esc(d.mac)}</div></div><span class="badge b-${d.status}">${statusName[d.status]}</span></div>
+  <div><span class="badge b-${d.online===true?'active':'none'}">${presenceLabel}</span></div>
   ${asking?`<div class="ask">Pedindo acesso desde ${esc(when(d.requestedAt))}</div>`:''}
-  <dl class="facts"><dt>Liberada até</dt><dd>${until}${d.plan&&d.status==='active'?' · '+planName[d.plan]:''}</dd><dt>Última conexão</dt><dd>${esc(when(d.lastSeen))}${d.version?' · v'+esc(d.version):''}</dd>${d.note?`<dt>Observação</dt><dd>${esc(d.note)}</dd>`:''}${d.hasCode?'':'<dt>Código</dt><dd>troca liberada (a próxima placa que conectar com este MAC fica registrada)</dd>'}</dl>
+  <dl class="facts"><dt>Liberada até</dt><dd>${until}${d.plan&&d.status==='active'?' · '+planName[d.plan]:''}</dd><dt>Último sinal</dt><dd>${esc(when(d.lastHeartbeat))}${d.version?' · v'+esc(d.version):''}</dd>${d.note?`<dt>Observação</dt><dd>${esc(d.note)}</dd>`:''}${d.hasCode?'':'<dt>Código</dt><dd>troca liberada (a próxima placa que conectar com este MAC fica registrada)</dd>'}</dl>
   <div class="actions"><button class="primary" data-act="month" data-mac="${d.mac}">Liberar 1 mês</button><button class="primary" data-act="year" data-mac="${d.mac}">Liberar 1 ano</button><button data-act="days" data-mac="${d.mac}">Dias…</button></div>
   <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button><button data-act="maintenance" data-mac="${d.mac}">Acesso e Wi-Fi</button>${d.firmwareReady===true?`<button data-act="firmware" data-mac="${esc(d.mac)}">Atualizar placa</button>`:''}${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div></article>`;
 }
@@ -1671,7 +1793,9 @@ function operationReadiness(){
   const board=boardRecord(),ready=board?.operationsRemote===true;
   const status=$('#operation-capability');
   status.textContent=!board?'Selecione um estabelecimento para consultar o estacionamento.':ready?
-    `Consultas disponíveis. Última conexão ${when(board.lastSeen)}.`:
+    (board.online===true?'Placa online · pronta para receber consultas.':board.lastHeartbeat>0?
+      `Placa offline · último sinal ${when(board.lastHeartbeat)}.`:
+      typeof board.lastHeartbeat==='number'?'Aguardando o primeiro sinal da placa.':`Última conexão ${when(board.lastSeen)}.`):
     'A partir da versão 0.19.5, o processador habilita as consultas ao sincronizar pela internet. Em versões anteriores, use Configurações → Painel remoto → Autorizar consultas no processador, se a opção estiver disponível.';
   status.classList.toggle('error',!!board&&!ready);
   $('#motion-submit').disabled=!ready||motion.loading;
@@ -1758,7 +1882,9 @@ function remoteQuery(mac,op,params,current,progress=()=>{}){
     const deadline=performance.now()+129000;
     let failures=0;
     while(performance.now()<deadline){
-      await wait(1200);
+      if(!current())throw noOperation;
+      await wait(performance.now()+121000<deadline?650:1800);
+      if(!current())throw noOperation;
       let result;
       try{result=await boundedOperationApi('/api/admin/operations/result?id='+encodeURIComponent(ticket.id));failures=0;}
       catch(error){
@@ -2197,14 +2323,218 @@ $('#refresh').onclick=()=>{
   if(activeArea==='movement'&&motion.query)loadMotion(motion.page);
   if(activeArea==='people'&&people.query)loadPeople(people.page);
 };
-$('#logout').onclick=()=>{store.clear();location.reload();};
-async function enter(){
-  try{await load();$('#login').hidden=true;$('#login-error').hidden=true;$('#app').hidden=false;$('#session').hidden=false;restoreMaintenanceRoute();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden&&!document.querySelector('dialog[open]'))load().catch(()=>{});},30000);return true;}
-  catch(e){$('#login-error').textContent=e.status===401?'Senha do painel incorreta.':'Não foi possível falar com o servidor: '+e.message;$('#login-error').hidden=false;return false;}
+const accessLogin=$('#login'),accessSettings=$('#access-settings-dialog'),accessRecovery=$('#access-recover-dialog'),accessCode=$('#access-code-dialog');
+const accessPasswordForm=$('#access-password-form'),accessCodeForm=$('#access-code-form'),accessRecoverForm=$('#access-recover-form');
+const accessDialogs=[accessSettings,accessRecovery];
+const accessForms=[accessPasswordForm,accessCodeForm,accessRecoverForm];
+const accessFlash='park-panel-access-message-v2';
+let accessWriting=false,accessStatusRevision=0,accessRecoveryKnown=null;
+function loginMessage(text,error=true){
+  const node=$('#login-error');
+  node.textContent=text;node.classList.toggle('error',error);node.hidden=!text;
 }
-$('#login').onsubmit=async e=>{e.preventDefault();const f=e.target;server=f.server.value.trim();token=f.token.value;if(await enter()){store.set('lic-server',server,f.remember.checked);store.set('lic-token',token,f.remember.checked);}};
-$('#login').server.value=server;
-if(server&&token)enter();
+function accessMessage(id,text){
+  const node=$(id);
+  node.textContent=text;node.hidden=!text;
+}
+function endAccess(message){
+  const wasOpen=!$('#app').hidden;
+  token='';store.clear();
+  accessLogin.elements.token.value='';
+  if(!wasOpen){loginMessage(message,false);return;}
+  $('#app').hidden=$('#session').hidden=true;
+  const nav=$('#android-nav');if(nav)nav.hidden=true;
+  clearInterval(timer);
+  try{sessionStorage.setItem(accessFlash,message);}catch{}
+  history.replaceState(null,'',location.pathname+location.search);
+  location.reload();
+}
+function accessServerFromLogin(){
+  const endpoint=accessLogin.elements.namedItem('server');
+  if(!endpoint)return true;
+  if(!endpoint.reportValidity()){
+    loginMessage('Informe o endereço HTTPS do servidor de licenças.');
+    endpoint.focus();return false;
+  }
+  server=endpoint.value.trim();return true;
+}
+function accessWritingState(active){
+  accessWriting=active;
+  for(const form of accessForms)form.querySelector('button[type="submit"]').disabled=active;
+  $('#access-generate-code').disabled=active||accessRecoveryKnown===null;
+  for(const button of document.querySelectorAll('[data-access-close]'))button.disabled=active;
+}
+function resetAccessForm(form,message){
+  form.reset();accessMessage(message,'');
+}
+async function openAccessSettings(){
+  if(!token||accessSettings.open)return;
+  const revision=++accessStatusRevision;
+  accessRecoveryKnown=null;
+  resetAccessForm(accessPasswordForm,'#access-password-error');
+  resetAccessForm(accessCodeForm,'#access-code-error');
+  accessWritingState(false);
+  $('#access-health').textContent='Consultando acesso…';
+  $('#access-generate-code').textContent='Gerar código de recuperação';
+  accessSettings.showModal();
+  try{
+    const value=await boundedOperationApi(accessPath+'status');
+    if(revision!==accessStatusRevision||!accessSettings.open)return;
+    if(typeof value.hasRecovery!=='boolean')throw Error('O servidor não confirmou o estado do código.');
+    accessRecoveryKnown=value.hasRecovery;
+    $('#access-health').textContent=value.hasRecovery?'Já existe um código de recuperação cadastrado.':'Ainda não há um código de recuperação.';
+    $('#access-generate-code').textContent=value.hasRecovery?'Gerar novo código':'Gerar código de recuperação';
+    accessWritingState(false);
+  }catch(error){
+    if(revision===accessStatusRevision&&accessSettings.open)
+      $('#access-health').textContent='Não foi possível consultar o código. Reabra Acesso ao painel para tentar novamente.';
+  }
+}
+function readNewAccessPassword(form,errorId){
+  const password=form.elements.newPassword.value,length=[...password].length;
+  if(length<12||length>128){
+    accessMessage(errorId,'A nova senha deve ter de 12 a 128 caracteres.');
+    form.elements.newPassword.focus();return null;
+  }
+  if(password!==form.elements.confirmation.value){
+    accessMessage(errorId,'As duas senhas novas devem ser iguais.');
+    form.elements.confirmation.focus();return null;
+  }
+  return password;
+}
+async function accessFailure(error,errorId,protectedMutation){
+  if(error.status===401&&protectedMutation)try{await boundedOperationApi(accessPath+'status');}catch{}
+  accessMessage(errorId,error.name==='AbortError'?'O servidor demorou a responder. Consulte o acesso antes de tentar novamente.':error.message);
+}
+accessPasswordForm.onsubmit=async event=>{
+  event.preventDefault();if(accessWriting)return;
+  const newPassword=readNewAccessPassword(accessPasswordForm,'#access-password-error');
+  if(newPassword===null)return;
+  const currentPassword=accessPasswordForm.elements.currentPassword.value;
+  resetAccessForm(accessPasswordForm,'#access-password-error');accessWritingState(true);
+  try{
+    const result=await boundedOperationApi(accessPath+'change',{currentPassword,newPassword});
+    if(result.ok!==true)throw Error('O servidor não confirmou a alteração.');
+    endAccess('Senha alterada. Entre com a nova senha.');
+  }catch(error){await accessFailure(error,'#access-password-error',true);}
+  finally{accessWritingState(false);}
+};
+accessCodeForm.onsubmit=async event=>{
+  event.preventDefault();if(accessWriting||accessRecoveryKnown===null)return;
+  const currentPassword=accessCodeForm.elements.currentPassword.value;
+  resetAccessForm(accessCodeForm,'#access-code-error');accessWritingState(true);
+  try{
+    const {recoveryCode}=await boundedOperationApi(accessPath+'recovery-code',{currentPassword});
+    if(typeof recoveryCode!=='string'||!recoveryCode)throw Error('O servidor não devolveu o código de recuperação.');
+    accessSettings.close();
+    $('#access-code-value').value=recoveryCode;
+    $('#access-code-status').textContent='';
+    accessCode.showModal();
+  }catch(error){await accessFailure(error,'#access-code-error',true);}
+  finally{accessWritingState(false);}
+};
+accessRecoverForm.onsubmit=async event=>{
+  event.preventDefault();if(accessWriting)return;
+  const newPassword=readNewAccessPassword(accessRecoverForm,'#access-recover-error');
+  if(newPassword===null)return;
+  const recoveryCode=accessRecoverForm.elements.recoveryCode.value.trim();
+  if(!recoveryCode){accessMessage('#access-recover-error','Informe o código de recuperação.');return;}
+  resetAccessForm(accessRecoverForm,'#access-recover-error');accessWritingState(true);
+  try{
+    const result=await boundedOperationApi(accessPath+'recover',{recoveryCode,newPassword});
+    if(result.ok!==true)throw Error('O servidor não confirmou a recuperação.');
+    accessRecovery.close();
+    endAccess('Acesso recuperado. Entre com a nova senha.');
+  }catch(error){await accessFailure(error,'#access-recover-error',false);}
+  finally{accessWritingState(false);}
+};
+$('#forgot-password').onclick=()=>{
+  if(!accessServerFromLogin())return;
+  resetAccessForm(accessRecoverForm,'#access-recover-error');
+  accessRecovery.showModal();
+};
+for(const dialog of accessDialogs)dialog.addEventListener('cancel',event=>{if(accessWriting)event.preventDefault();});
+for(const button of document.querySelectorAll('[data-access-close]'))button.onclick=()=>{if(!accessWriting)button.closest('dialog').close();};
+accessSettings.addEventListener('close',()=>{
+  if(accessSettings.open)return;
+  ++accessStatusRevision;
+  resetAccessForm(accessPasswordForm,'#access-password-error');resetAccessForm(accessCodeForm,'#access-code-error');
+});
+accessRecovery.addEventListener('close',()=>{if(!accessRecovery.open)resetAccessForm(accessRecoverForm,'#access-recover-error');});
+function clearRecoveryCode(){
+  $('#access-code-value').value='';$('#access-code-status').textContent='';
+}
+$('#access-code-close').onclick=()=>{clearRecoveryCode();accessCode.close();};
+accessCode.addEventListener('cancel',clearRecoveryCode);
+accessCode.addEventListener('close',()=>{if(!accessCode.open)clearRecoveryCode();});
+$('#access-copy-code').onclick=async()=>{
+  const field=$('#access-code-value');
+  if(!field.value)return;
+  try{
+    await navigator.clipboard.writeText(field.value);
+    if(accessCode.open&&field.value)$('#access-code-status').textContent='Código copiado.';
+  }catch{
+    if(!accessCode.open||!field.value)return;
+    field.focus();field.select();
+    $('#access-code-status').textContent='O código está selecionado. Use a opção Copiar do aparelho.';
+  }
+};
+$('#logout').onclick=()=>endAccess('Você saiu do painel.');
+async function enter(){
+  await load();
+  $('#login').hidden=true;$('#login-error').hidden=true;$('#app').hidden=false;$('#session').hidden=false;
+  restoreMaintenanceRoute();
+  clearInterval(timer);timer=setInterval(()=>{if(!document.hidden&&!document.querySelector('dialog[open]'))load().catch(()=>{});},30000);
+}
+async function openAccessSession(password,remember){
+  const result=await boundedOperationApi(accessPath+'login',{password,remember});
+  if(!isAccessSession(result.token))throw Error('O servidor não confirmou uma sessão válida.');
+  token=result.token;
+  const saved=store.set(token,remember);
+  await enter();
+  if(!saved)toast('Acesso aberto nesta sessão. Não foi possível lembrar o acesso.',true);
+}
+function loginBusy(active){
+  const button=accessLogin.querySelector('[type="submit"]');
+  button.disabled=active;button.textContent=active?'Entrando…':'Entrar';
+  $('#forgot-password').disabled=active;
+}
+accessLogin.onsubmit=async event=>{
+  event.preventDefault();
+  if(accessLogin.querySelector('[type="submit"]').disabled||!accessServerFromLogin())return;
+  const remember=accessLogin.elements.remember.checked;
+  let password=accessLogin.elements.token.value;
+  accessLogin.elements.token.value='';
+  loginMessage('');loginBusy(true);
+  try{await openAccessSession(password,remember);}
+  catch(error){
+    loginMessage(error.status===401?'Senha do painel incorreta.':error.name==='AbortError'?'O servidor demorou a responder. Tente novamente.':error.message);
+  }finally{password='';loginBusy(false);}
+};
+async function restoreAccessSession(){
+  try{
+    const message=sessionStorage.getItem(accessFlash);
+    sessionStorage.removeItem(accessFlash);
+    if(message)loginMessage(message,false);
+  }catch{}
+  const saved=store.read();
+  if(!server||!saved)return;
+  accessLogin.elements.remember.checked=saved.remember;
+  loginBusy(true);
+  try{
+    if(saved.legacy)await openAccessSession(saved.value,saved.remember);
+    else{token=saved.value;await enter();}
+  }catch(error){
+    if(error.status===401){
+      endAccess(saved.legacy?'Entre com a senha atual do painel para concluir a atualização.':'Sessão encerrada. Entre novamente.');
+    }else{
+      loginMessage(saved.legacy?'Não foi possível migrar o acesso. Entre novamente com a senha do painel.':'Não foi possível restaurar a sessão. '+error.message);
+    }
+  }finally{saved.value='';loginBusy(false);}
+}
+$('#access-settings').onclick=openAccessSettings;
+accessLogin.elements.server.value=server;
+restoreAccessSession();
 </script>
 </body>
 </html>
