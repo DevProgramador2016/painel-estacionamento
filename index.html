@@ -714,7 +714,7 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
       <h3>Alterar senha</h3>
       <label>Senha atual<input name="currentPassword" type="password" autocomplete="current-password" required></label>
       <label>Nova senha<input name="newPassword" type="password" autocomplete="new-password" required aria-describedby="access-password-help"></label>
-      <small class="hint" id="access-password-help">Use de 12 a 128 caracteres.</small>
+      <small class="hint" id="access-password-help">Use de 6 a 128 caracteres.</small>
       <label>Confirme a nova senha<input name="confirmation" type="password" autocomplete="new-password" required></label>
       <p class="hint error" id="access-password-error" role="alert" hidden></p>
       <button class="primary" type="submit">Alterar senha</button>
@@ -734,7 +734,7 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
     <p class="hint">Use o código que você guardou ao configurar o acesso. Se perdeu a senha e o código, procure o responsável pelo servidor de licenças.</p>
     <label>Código de recuperação<input name="recoveryCode" required autocomplete="off" autocapitalize="off" spellcheck="false"></label>
     <label>Nova senha<input name="newPassword" type="password" autocomplete="new-password" required aria-describedby="access-recover-help"></label>
-    <small class="hint" id="access-recover-help">Use de 12 a 128 caracteres.</small>
+    <small class="hint" id="access-recover-help">Use de 6 a 128 caracteres.</small>
     <label>Confirme a nova senha<input name="confirmation" type="password" autocomplete="new-password" required></label>
     <p class="hint error" id="access-recover-error" role="alert" hidden></p>
     <div class="dialog-actions"><button type="button" data-access-close>Cancelar</button><button type="submit" class="primary">Redefinir senha</button></div>
@@ -2392,8 +2392,8 @@ async function openAccessSettings(){
 }
 function readNewAccessPassword(form,errorId){
   const password=form.elements.newPassword.value,length=[...password].length;
-  if(length<12||length>128){
-    accessMessage(errorId,'A nova senha deve ter de 12 a 128 caracteres.');
+  if(length<6||length>128){
+    accessMessage(errorId,'A nova senha deve ter de 6 a 128 caracteres.');
     form.elements.newPassword.focus();return null;
   }
   if(password!==form.elements.confirmation.value){
