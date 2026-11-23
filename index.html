@@ -1291,7 +1291,16 @@ function confirmFirmwareUpdate(mac=''){
   firmwareConfirm.showModal();$('#firmware-confirm-cancel').focus();
 }
 firmwareSelect.onchange=()=>setFirmwareRelease(firmwareSelect.value);
-$('#firmware-refresh').onclick=()=>loadFirmwareOverview();
+$('#firmware-refresh').onclick=async event=>{
+  const button=event.currentTarget;
+  button.disabled=true;
+  try{
+    await load();
+    await loadFirmwareOverview();
+  }catch(error){
+    firmwareMessage('#firmware-jobs-note',error.message,true);
+  }finally{button.disabled=false;}
+};
 $('#firmware-update-all').onclick=()=>confirmFirmwareUpdate();
 $('#firmware-board-list').onclick=event=>{
   const button=event.target.closest('[data-firmware-update]');
