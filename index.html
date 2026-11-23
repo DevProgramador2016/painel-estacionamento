@@ -67,6 +67,10 @@ dialog{border:0;border-radius:16px;padding:22px;width:min(440px,calc(100vw - 24p
 dialog::backdrop{background:rgba(10,16,28,.55)}
 dialog form{display:grid;gap:14px}
 .dialog-actions{display:flex;justify-content:flex-end;gap:10px}
+#maintenance-fields{border:0;padding:0;margin:0;min-width:0;display:grid;gap:13px}
+#maintenance-fields[hidden]{display:none}
+#maintenance-dialog .hint{font-size:13px;color:var(--muted)}
+#maintenance-dialog .dialog-actions{flex-wrap:wrap}
 #billing-dialog fieldset{border:0;padding:0;margin:0;min-width:0;display:grid;gap:14px}
 #billing-dialog .hint{display:block;color:var(--muted);font-size:13px}
 .prices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -251,6 +255,20 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px
 <footer>Sistema criado por Felipe Bruno</footer>
 <dialog id="days-dialog"><form id="days-form"><h2>Liberar por dias</h2><p id="days-for" class="mac"></p><label>Quantos dias<input name="days" type="number" min="1" max="3660" step="1" value="15" required></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Liberar</button></div></form></dialog>
 <dialog id="edit-dialog"><form id="edit-form"><h2>Editar placa</h2><p id="edit-for" class="mac"></p><label>Observação (só aparece aqui)<input name="note" maxlength="200" placeholder="Ex.: cliente, telefone, forma de pagamento"></label><label>Liberada até<input name="date" type="date"></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Salvar</button></div></form></dialog>
+<dialog id="maintenance-dialog" aria-labelledby="maintenance-title">
+  <form id="maintenance-form" autocomplete="off">
+    <h2 id="maintenance-title">Acesso e Wi-Fi</h2>
+    <p id="maintenance-for" class="mac"></p>
+    <p id="maintenance-status" role="status" aria-live="polite"></p>
+    <fieldset id="maintenance-fields">
+      <label>Alteração<select name="action"><option value="owner">Administrador do painel local</option><option value="wifi">Wi-Fi do estabelecimento</option><option value="ap">Rede própria do ESP32</option></select></label>
+      <label><span id="maintenance-name-label">Novo usuário do administrador</span><input name="account" required autocomplete="off" spellcheck="false" autocapitalize="none"></label>
+      <label><span id="maintenance-password-label">Nova senha do administrador</span><input name="password" type="password" autocomplete="new-password"></label>
+      <p class="hint" id="maintenance-help"></p>
+    </fieldset>
+    <div class="dialog-actions"><button type="button" data-close>Fechar</button><button type="submit" id="maintenance-save" class="primary">Enviar alteração</button></div>
+  </form>
+</dialog>
 <dialog id="billing-dialog" aria-labelledby="billing-title">
   <form id="billing-form" autocomplete="off">
     <div><h2 id="billing-title">Pagamentos da licença</h2><p class="hint">A placa oferece renovação pela InfinitePay quando a licença vence.</p></div>
@@ -319,9 +337,9 @@ function toast(t,err){clearTimeout(toastTimer);$('#toast').textContent=t;$('#toa
 const billingPath='/api/admin/billing';
 async function api(path,body,signal){
   const url=new URL(server);
-  const billingRequest=path===billingPath;
+  const secureRequest=path===billingPath||path.startsWith('/api/admin/maintenance/');
   const local=url.protocol==='http:'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname);
-  if((url.protocol!=='https:'&&(!local||billingRequest))||url.username||url.password||url.pathname!=='/'||url.search||url.hash){
+  if((url.protocol!=='https:'&&(!local||secureRequest))||url.username||url.password||url.pathname!=='/'||url.search||url.hash){
     throw new Error('Entre com o endereço HTTPS do servidor de licenças.');
   }
   const r=await fetch(new URL(path,url.origin),{method:body===undefined?'GET':'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:'error',signal});
@@ -356,11 +374,13 @@ function card(d){
   ${asking?`<div class="ask">Pedindo acesso desde ${esc(when(d.requestedAt))}</div>`:''}
   <dl class="facts"><dt>Liberada até</dt><dd>${until}${d.plan&&d.status==='active'?' · '+planName[d.plan]:''}</dd><dt>Última conexão</dt><dd>${esc(when(d.lastSeen))}${d.version?' · v'+esc(d.version):''}</dd>${d.note?`<dt>Observação</dt><dd>${esc(d.note)}</dd>`:''}${d.hasCode?'':'<dt>Código</dt><dd>troca liberada (a próxima placa que conectar com este MAC fica registrada)</dd>'}</dl>
   <div class="actions"><button class="primary" data-act="month" data-mac="${d.mac}">Liberar 1 mês</button><button class="primary" data-act="year" data-mac="${d.mac}">Liberar 1 ano</button><button data-act="days" data-mac="${d.mac}">Dias…</button></div>
-  <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button>${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div></article>`;
+  <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button><button data-act="maintenance" data-mac="${d.mac}">Acesso e Wi-Fi</button>${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div></article>`;
 }
 let target='',originalExpiryDate='';
 async function act(what,mac,btn){
-  const d=devices.find(x=>x.mac===mac),name=d.name||mac;target=mac;
+  const d=devices.find(x=>x.mac===mac);if(!d)return;
+  if(what==='maintenance'){openMaintenance(d);return;}
+  const name=d.name||mac;target=mac;
   if(what==='days'){$('#days-for').textContent=`${name} · ${mac}`;$('#days-dialog').showModal();return;}
   if(what==='edit'){const f=$('#edit-form');f.note.value=d.note||'';originalExpiryDate=editDate(d.expires);f.date.value=originalExpiryDate;$('#edit-for').textContent=`${name} · ${mac}`;$('#edit-dialog').showModal();return;}
   const ask={block:`Bloquear ${name} agora? As novas entradas param assim que a placa consultar o servidor.`,reset:`Liberar a troca de código de ${name}? Use quando a placa foi regravada do zero ou trocada.`,delete:`Excluir ${name} do painel? Se ela conectar de novo, aparece como placa nova, sem liberação.`}[what];
@@ -377,6 +397,97 @@ async function act(what,mac,btn){
 }
 $('#days-form').onsubmit=async e=>{e.preventDefault();try{await api('/api/admin/grant',{mac:target,period:'days',days:Number(e.target.days.value)});$('#days-dialog').close();toast(`Liberada por mais ${e.target.days.value} dias.`);await load();}catch(err){toast(err.message,true);}};
 $('#edit-form').onsubmit=async e=>{e.preventDefault();const f=e.target,body={mac:target,note:f.note.value};if(f.date.value&&f.date.value!==originalExpiryDate)body.expires=Math.floor(Date.parse(f.date.value+'T23:59:59-03:00')/1000);try{await api('/api/admin/update',body);$('#edit-dialog').close();toast('Placa atualizada.');await load();}catch(err){toast(err.message,true);}};
+const maintenanceDialog=$('#maintenance-dialog'),maintenanceForm=$('#maintenance-form');
+const maintenanceJobs=new Map();
+let maintenanceMac='';
+const maintenanceDetails={
+  owner:{name:'Novo usuário do administrador',password:'Nova senha do administrador',hint:'A troca encerra as sessões locais. Entre novamente com o novo usuário e a nova senha.',done:'Administrador atualizado. Entre novamente no painel local.'},
+  wifi:{name:'Nome da rede Wi-Fi',password:'Senha da rede Wi-Fi',hint:'A placa precisa estar online para receber a alteração. Para rede aberta, deixe a senha em branco.',done:'A placa confirmou a configuração de Wi-Fi. Se o endereço local mudar, abra o painel pelo novo endereço.'},
+  ap:{name:'Novo nome da rede própria',password:'Nova senha da rede própria',hint:'Os aparelhos conectados à rede própria do ESP32 precisarão reconectar quando o novo nome e a nova senha entrarem em uso.',done:'Rede própria atualizada. Reconecte os aparelhos usando a nova configuração.'},
+};
+function clearMaintenanceInputs(){
+  maintenanceForm.elements.account.value='';
+  maintenanceForm.elements.password.value='';
+}
+function showMaintenanceFields(){
+  const {action,account,password}=maintenanceForm.elements;
+  const selected=action.value,detail=maintenanceDetails[selected];
+  $('#maintenance-name-label').textContent=detail.name;
+  $('#maintenance-password-label').textContent=detail.password;
+  $('#maintenance-help').textContent=detail.hint;
+  account.maxLength=32;account.minLength=selected==='owner'?3:1;
+  password.maxLength=selected==='owner'?64:63;
+  password.required=selected!=='wifi';
+}
+function showMaintenanceStatus(mac){
+  if(!maintenanceDialog.open||mac!==maintenanceMac)return;
+  const ready=devices.find(device=>device.mac===mac)?.maintenanceReady===true,job=maintenanceJobs.get(mac);
+  const fields=$('#maintenance-fields'),submit=$('#maintenance-save'),message=$('#maintenance-status');
+  fields.hidden=!ready;fields.disabled=!ready||job?.state==='waiting';
+  submit.hidden=!ready;submit.disabled=fields.disabled;
+  message.classList.toggle('error',job?.state==='error');
+  message.textContent=job?.message||(ready?'Mantenha esta placa ligada e com internet até a confirmação.':'Mantenha a placa ligada e online. A configuração pelo painel está disponível a partir da versão 0.20.0, após a sincronização.');
+}
+function openMaintenance(board){
+  maintenanceMac=board.mac;
+  maintenanceForm.reset();clearMaintenanceInputs();
+  $('#maintenance-for').textContent=`${registeredName(board)} · ${board.mac}`;
+  showMaintenanceFields();
+  maintenanceDialog.showModal();showMaintenanceStatus(board.mac);
+}
+maintenanceDialog.addEventListener('close',()=>{clearMaintenanceInputs();maintenanceMac='';});
+maintenanceForm.elements.action.onchange=()=>{clearMaintenanceInputs();showMaintenanceFields();maintenanceForm.elements.account.focus();};
+function maintenanceParams(action,account,password){
+  const encoder=new TextEncoder(),passwordBytes=encoder.encode(password).length;
+  const control=/[\u0000-\u001f\u007f]/;
+  if(action==='owner'){
+    if(!/^[A-Za-z0-9._-]{3,32}$/.test(account)||passwordBytes<6||passwordBytes>64||control.test(password))
+      throw Error('Use de 3 a 32 letras, números, ponto, hífen ou sublinhado no usuário e uma senha de 6 a 64 bytes.');
+    return {username:account,password};
+  }
+  const ssidLength=encoder.encode(account).length;
+  if(!ssidLength||ssidLength>32||control.test(account)||((passwordBytes||action==='ap')&&(passwordBytes<8||passwordBytes>63||control.test(password))))
+    throw Error('Informe um nome de rede de até 32 bytes e uma senha de 8 a 63 bytes. A senha pode ficar em branco no Wi-Fi do estabelecimento se a rede for aberta.');
+  return {ssid:account,password};
+}
+async function receiveMaintenance(ticket){
+  if(ticket?.state!=='waiting'||!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(ticket.id||''))
+    throw Error('O servidor ainda não confirmou a solicitação. Confira a placa antes de reenviar.');
+  const deadline=performance.now()+610000;
+  do{
+    await wait(2000);
+    let result;
+    try{result=await boundedOperationApi('/api/admin/maintenance/result?id='+encodeURIComponent(ticket.id));}
+    catch(error){if(error.status===401||error.status===403)throw error;continue;}
+    if(result.state==='done')return;
+    if(result.state==='error')throw Error(result.error||'A placa informou que a alteração falhou.');
+  }while(performance.now()<deadline);
+  throw Error('O tempo de confirmação terminou. Confira o estado da placa antes de reenviar.');
+}
+maintenanceForm.onsubmit=async event=>{
+  event.preventDefault();
+  const mac=maintenanceMac,board=devices.find(device=>device.mac===mac);
+  if(board?.maintenanceReady!==true||maintenanceJobs.get(mac)?.state==='waiting')return;
+  const {action,account,password}=maintenanceForm.elements,selected=action.value;
+  if(!Object.hasOwn(maintenanceDetails,selected))return;
+  let params;
+  try{params=maintenanceParams(selected,account.value,password.value);}
+  catch(error){const message=$('#maintenance-status');message.textContent=error.message;message.classList.add('error');return;}
+  const job={state:'waiting',message:'Enviando à placa…'};
+  maintenanceJobs.set(mac,job);clearMaintenanceInputs();showMaintenanceStatus(mac);
+  try{
+    const sending=boundedOperationApi('/api/admin/maintenance/request',{mac,action:selected,params});
+    params.password='';
+    const ticket=await sending;
+    job.message='Aguardando a confirmação da placa…';showMaintenanceStatus(mac);
+    await receiveMaintenance(ticket);
+    job.state='done';job.message=maintenanceDetails[selected].done;
+  }catch(error){
+    job.state='error';
+    job.message=error.name==='AbortError'||error instanceof TypeError?'O envio não foi confirmado. Confira a placa antes de reenviar.':error.message;
+  }
+  showMaintenanceStatus(mac);
+};
 const billingDialog=$('#billing-dialog');
 const billingForm=$('#billing-form');
 const billingFields=$('#billing-fields');
@@ -625,7 +736,7 @@ const noOperation=Symbol('cancelled operation');
 const methodNames={cash:'Dinheiro',pix:'Pix',card:'Cartão',pending:'Pendente',monthly:'Incluído na mensalidade'};
 const modeNames={fraction:'Fração',daily:'Diária',overnight:'Pernoite',monthly:'Mensalista'};
 const planStatuses={active:'Em dia','due-soon':'A vencer',overdue:'Vencido',inactive:'Inativo'};
-const remoteUnavailable='A placa não respondeu. Confira se está ligada, com internet e com as consultas remotas autorizadas.';
+const remoteUnavailable='A placa não respondeu. Confira se está ligada e conectada à internet.';
 const brl=cents=>paymentMoney.format((Number.isFinite(cents)?cents:0)/100);
 const isoDay=date=>date.toISOString().slice(0,10);
 const brDay=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')?value.split('-').reverse().join('/'):'—';
@@ -640,8 +751,8 @@ function operationReadiness(){
   const board=boardRecord(),ready=board?.operationsRemote===true;
   const status=$('#operation-capability');
   status.textContent=!board?'Selecione um estabelecimento para consultar o estacionamento.':ready?
-    `Consultas autorizadas. Última conexão ${when(board.lastSeen)}.`:
-    'Atualize o ESP32 e ative Configurações → Painel remoto → Autorizar consultas na placa.';
+    `Consultas disponíveis. Última conexão ${when(board.lastSeen)}.`:
+    'A partir da versão 0.19.5, o ESP32 habilita as consultas ao sincronizar pela internet. Em versões anteriores, use Configurações → Painel remoto → Autorizar consultas na placa, se a opção estiver disponível.';
   status.classList.toggle('error',!!board&&!ready);
   $('#motion-submit').disabled=!ready||motion.loading;
   $('#people-submit').disabled=!ready||people.loading;
