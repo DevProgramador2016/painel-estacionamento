@@ -71,6 +71,16 @@ dialog form{display:grid;gap:14px}
 #maintenance-fields[hidden]{display:none}
 #maintenance-dialog .hint{font-size:13px;color:var(--muted)}
 #maintenance-dialog .dialog-actions{flex-wrap:wrap}
+.maintenance-wifi:not([hidden]),#maintenance-inputs:not([hidden]){display:grid;gap:10px}
+.maintenance-wifi-current:not([hidden]){display:grid;gap:5px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;overflow-wrap:anywhere}
+.maintenance-wifi-current a{width:fit-content}
+.maintenance-wifi-actions,.maintenance-password{display:flex;align-items:center;gap:8px}
+.maintenance-wifi-actions{flex-wrap:wrap}
+.maintenance-password input{min-width:0;flex:1}
+.maintenance-password button{flex:none}
+#maintenance-wifi-list{display:grid;gap:6px;max-height:13rem;overflow:auto;overscroll-behavior:contain}
+#maintenance-wifi-list button{display:grid;justify-items:start;gap:3px;text-align:left;overflow-wrap:anywhere}
+#maintenance-wifi-list button[aria-pressed="true"]{outline:2px solid currentColor;outline-offset:-2px}
 #billing-dialog fieldset{border:0;padding:0;margin:0;min-width:0;display:grid;gap:14px}
 #billing-dialog .hint{display:block;color:var(--muted);font-size:13px}
 .prices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -262,9 +272,32 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;padding:10px 0 24px
     <p id="maintenance-status" role="status" aria-live="polite"></p>
     <fieldset id="maintenance-fields">
       <label>Alteração<select name="action"><option value="owner">Administrador do painel local</option><option value="wifi">Wi-Fi do estabelecimento</option><option value="ap">Rede própria do ESP32</option></select></label>
-      <label><span id="maintenance-name-label">Novo usuário do administrador</span><input name="account" required autocomplete="off" spellcheck="false" autocapitalize="none"></label>
-      <label><span id="maintenance-password-label">Nova senha do administrador</span><input name="password" type="password" autocomplete="new-password"></label>
-      <p class="hint" id="maintenance-help"></p>
+      <section id="maintenance-wifi" class="maintenance-wifi" aria-label="Rede Wi-Fi do ESP32" hidden>
+        <div class="maintenance-wifi-current" id="maintenance-wifi-current" hidden>
+          <strong id="maintenance-wifi-current-name"></strong>
+          <a id="maintenance-wifi-ip" target="_blank" rel="noopener noreferrer" hidden></a>
+          <small id="maintenance-wifi-ip-hint" class="hint" hidden>Endereço local. Abra em um aparelho na rede do estabelecimento.</small>
+        </div>
+        <p id="maintenance-wifi-progress" class="hint" role="status"></p>
+        <div class="maintenance-wifi-actions">
+          <button id="maintenance-wifi-change" type="button" hidden>Conectar a outra rede</button>
+          <button id="maintenance-wifi-refresh" type="button" hidden>Atualizar conexão</button>
+          <button id="maintenance-wifi-scan" type="button" hidden>Buscar redes</button>
+          <button id="maintenance-wifi-manual" type="button" hidden>Digitar nome da rede</button>
+        </div>
+        <div id="maintenance-wifi-list" hidden></div>
+      </section>
+      <div id="maintenance-inputs">
+        <label><span id="maintenance-name-label">Novo usuário do administrador</span><input name="account" required autocomplete="off" spellcheck="false" autocapitalize="none"></label>
+        <div id="maintenance-password">
+          <label id="maintenance-password-label" for="maintenance-password-input">Nova senha do administrador</label>
+          <div class="maintenance-password">
+            <input id="maintenance-password-input" name="password" type="password" autocomplete="new-password">
+            <button type="button" id="maintenance-password-toggle" aria-label="Mostrar senha" aria-controls="maintenance-password-input" aria-pressed="false" title="Mostrar senha"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+        </div>
+        <p class="hint" id="maintenance-help"></p>
+      </div>
     </fieldset>
     <div class="dialog-actions"><button type="button" data-close>Fechar</button><button type="submit" id="maintenance-save" class="primary">Enviar alteração</button></div>
   </form>
@@ -400,6 +433,7 @@ $('#edit-form').onsubmit=async e=>{e.preventDefault();const f=e.target,body={mac
 const maintenanceDialog=$('#maintenance-dialog'),maintenanceForm=$('#maintenance-form');
 const maintenanceJobs=new Map();
 let maintenanceMac='';
+let maintenanceNetwork=null;
 const maintenanceDetails={
   owner:{name:'Novo usuário do administrador',password:'Nova senha do administrador',hint:'A troca encerra as sessões locais. Entre novamente com o novo usuário e a nova senha.',done:'Administrador atualizado. Entre novamente no painel local.'},
   wifi:{name:'Nome da rede Wi-Fi',password:'Senha da rede Wi-Fi',hint:'A placa precisa estar online para receber a alteração. Para rede aberta, deixe a senha em branco.',done:'A placa confirmou a configuração de Wi-Fi. Se o endereço local mudar, abra o painel pelo novo endereço.'},
@@ -408,6 +442,14 @@ const maintenanceDetails={
 function clearMaintenanceInputs(){
   maintenanceForm.elements.account.value='';
   maintenanceForm.elements.password.value='';
+  maintenancePasswordVisible(false);
+}
+function maintenancePasswordVisible(show){
+  const toggle=$('#maintenance-password-toggle'),caption=show?'Ocultar senha':'Mostrar senha';
+  maintenanceForm.elements.password.type=show?'text':'password';
+  toggle.setAttribute('aria-pressed',String(show));
+  toggle.setAttribute('aria-label',caption);
+  toggle.title=caption;
 }
 function showMaintenanceFields(){
   const {action,account,password}=maintenanceForm.elements;
@@ -418,25 +460,139 @@ function showMaintenanceFields(){
   account.maxLength=32;account.minLength=selected==='owner'?3:1;
   password.maxLength=selected==='owner'?64:63;
   password.required=selected!=='wifi';
+  password.disabled=false;account.readOnly=false;
+  $('#maintenance-password').hidden=false;
+}
+function renderMaintenanceWifi(){
+  const view=maintenanceNetwork,show=!!view;
+  $('#maintenance-wifi').hidden=!show;
+  $('#maintenance-inputs').hidden=show&&!view.choice;
+  if(!show)return;
+  const {current,busy,editing,items,choice}=view;
+  const name=$('#maintenance-wifi-current-name'),ip=$('#maintenance-wifi-ip');
+  $('#maintenance-wifi-current').hidden=!current;
+  name.textContent=current?.connected?(current.ssid?`Rede conectada: ${current.ssid}`:'Wi-Fi conectado'):'ESP32 sem conexão Wi-Fi';
+  const address=current?.connected&&typeof current.ip==='string'&&/^(?:\d{1,3}\.){3}\d{1,3}$/.test(current.ip)&&
+    current.ip.split('.').every(part=>String(Number(part))===part&&Number(part)<=255)&&current.ip!=='0.0.0.0'?current.ip:'';
+  ip.hidden=!address;
+  ip.textContent=address;
+  if(address)ip.href=`http://${address}/`;else ip.removeAttribute('href');
+  $('#maintenance-wifi-ip-hint').hidden=!address;
+  const message=$('#maintenance-wifi-progress');
+  message.textContent=view.message;
+  message.classList.toggle('error',view.error);
+  const change=$('#maintenance-wifi-change'),refresh=$('#maintenance-wifi-refresh'),scan=$('#maintenance-wifi-scan'),manual=$('#maintenance-wifi-manual');
+  change.hidden=!current?.connected||editing;
+  refresh.hidden=!current&&!view.error;
+  scan.hidden=manual.hidden=!editing;
+  scan.textContent=items?.length?'Buscar novamente':'Buscar redes';
+  change.disabled=refresh.disabled=scan.disabled=!!busy;
+  $('#maintenance-wifi-list').hidden=!editing||!items?.length;
+  if(choice){
+    const {account,password}=maintenanceForm.elements;
+    account.readOnly=!choice.manual;
+    password.disabled=choice.secured===false;
+    password.required=choice.secured===true;
+    $('#maintenance-password').hidden=password.disabled;
+    $('#maintenance-help').textContent=password.disabled?'A rede selecionada é aberta.':maintenanceDetails.wifi.hint;
+  }
+}
+function chooseMaintenanceWifi(choice){
+  const view=maintenanceNetwork;
+  if(!view?.editing||maintenanceJobs.get(maintenanceMac)?.state==='waiting')return;
+  view.choice=choice;
+  clearMaintenanceInputs();
+  maintenanceForm.elements.account.value=choice.ssid||'';
+  $('#maintenance-wifi-list').querySelectorAll('button').forEach(button=>
+    button.setAttribute('aria-pressed',String(!choice.manual&&button.dataset.ssid===choice.ssid)));
+  showMaintenanceStatus(maintenanceMac);
+  (choice.manual?maintenanceForm.elements.account:choice.secured===false?$('#maintenance-save'):maintenanceForm.elements.password).focus();
+}
+function renderMaintenanceNetworks(view){
+  const list=$('#maintenance-wifi-list');
+  list.replaceChildren();
+  for(const network of view.items||[]){
+    const button=document.createElement('button'),name=document.createElement('strong'),info=document.createElement('small');
+    button.type='button';button.dataset.ssid=network.ssid;button.dataset.maintenanceWifiNetwork='';
+    button.setAttribute('aria-pressed',String(view.choice?.ssid===network.ssid));
+    name.textContent=network.ssid;
+    info.textContent=`${network.secured?'Protegida':'Rede aberta'} · Sinal ${network.rssi>=-60?'forte':network.rssi>=-75?'médio':'fraco'}`;
+    button.append(name,info);
+    button.onclick=()=>chooseMaintenanceWifi(network);
+    list.append(button);
+  }
+}
+async function queryMaintenanceWifi(op){
+  const view=maintenanceNetwork,mac=maintenanceMac;
+  if(!view||view.busy||maintenanceJobs.get(mac)?.state==='waiting')return;
+  const current=()=>maintenanceDialog.open&&maintenanceMac===mac&&maintenanceNetwork===view;
+  view.busy=op;view.error=false;
+  view.message=op==='wifi-scan'?'Buscando redes próximas ao ESP32…':'Consultando a conexão do ESP32…';
+  showMaintenanceStatus(mac);
+  try{
+    const result=await remoteQuery(mac,op,{},current);
+    if(!current())return;
+    if(typeof result?.connected!=='boolean'||typeof result.ssid!=='string'||typeof result.ip!=='string'||
+       (op==='wifi-scan'&&!Array.isArray(result.networks)))throw Error('A placa enviou uma resposta de Wi-Fi incompleta.');
+    view.current={connected:result.connected,ssid:result.ssid,ip:result.ip};
+    if(!result.connected)view.editing=true;
+    if(op==='wifi-scan'){
+      view.items=result.networks.filter(network=>typeof network?.ssid==='string'&&network.ssid&&typeof network.secured==='boolean'&&Number.isFinite(network.rssi));
+      renderMaintenanceNetworks(view);
+      view.message=view.items.length?'Redes próximas ao ESP32. Escolha a rede do estabelecimento.':'Nenhuma rede encontrada. Busque novamente ou digite o nome.';
+    }else view.message='';
+  }catch(error){
+    if(!current()||error===noOperation)return;
+    view.error=true;view.message=error.message;
+    if(!view.current)view.editing=true;
+  }finally{
+    if(current()){
+      view.busy='';
+      showMaintenanceStatus(mac);
+    }
+  }
 }
 function showMaintenanceStatus(mac){
   if(!maintenanceDialog.open||mac!==maintenanceMac)return;
   const ready=devices.find(device=>device.mac===mac)?.maintenanceReady===true,job=maintenanceJobs.get(mac);
   const fields=$('#maintenance-fields'),submit=$('#maintenance-save'),message=$('#maintenance-status');
+  renderMaintenanceWifi();
   fields.hidden=!ready;fields.disabled=!ready||job?.state==='waiting';
-  submit.hidden=!ready;submit.disabled=fields.disabled;
+  submit.hidden=!ready||$('#maintenance-inputs').hidden;submit.disabled=fields.disabled||!!maintenanceNetwork?.busy;
   message.classList.toggle('error',job?.state==='error');
   message.textContent=job?.message||(ready?'Mantenha esta placa ligada e com internet até a confirmação.':'Mantenha a placa ligada e online. A configuração pelo painel está disponível a partir da versão 0.20.0, após a sincronização.');
 }
 function openMaintenance(board){
   maintenanceMac=board.mac;
+  maintenanceNetwork=null;
   maintenanceForm.reset();clearMaintenanceInputs();
   $('#maintenance-for').textContent=`${registeredName(board)} · ${board.mac}`;
   showMaintenanceFields();
   maintenanceDialog.showModal();showMaintenanceStatus(board.mac);
 }
-maintenanceDialog.addEventListener('close',()=>{clearMaintenanceInputs();maintenanceMac='';});
-maintenanceForm.elements.action.onchange=()=>{clearMaintenanceInputs();showMaintenanceFields();maintenanceForm.elements.account.focus();};
+maintenanceDialog.addEventListener('close',()=>{
+  if(maintenanceDialog.open)return;
+  clearMaintenanceInputs();maintenanceMac='';maintenanceNetwork=null;
+});
+maintenanceForm.elements.action.onchange=()=>{
+  clearMaintenanceInputs();showMaintenanceFields();
+  const board=devices.find(device=>device.mac===maintenanceMac);
+  maintenanceNetwork=maintenanceForm.elements.action.value==='wifi'&&board?.networkReady===true
+    ?{current:null,editing:false,choice:null,busy:'',items:null,message:'',error:false}:null;
+  $('#maintenance-wifi-list').replaceChildren();
+  if(maintenanceNetwork)queryMaintenanceWifi('wifi-status');
+  else{showMaintenanceStatus(maintenanceMac);maintenanceForm.elements.account.focus();}
+};
+$('#maintenance-password-toggle').onclick=()=>maintenancePasswordVisible(maintenanceForm.elements.password.type==='password');
+$('#maintenance-wifi-change').onclick=()=>{
+  if(!maintenanceNetwork||maintenanceNetwork.busy)return;
+  maintenanceNetwork.editing=true;
+  showMaintenanceStatus(maintenanceMac);
+  $('#maintenance-wifi-scan').focus();
+};
+$('#maintenance-wifi-refresh').onclick=()=>queryMaintenanceWifi('wifi-status');
+$('#maintenance-wifi-scan').onclick=()=>queryMaintenanceWifi('wifi-scan');
+$('#maintenance-wifi-manual').onclick=()=>chooseMaintenanceWifi({manual:true});
 function maintenanceParams(action,account,password){
   const encoder=new TextEncoder(),passwordBytes=encoder.encode(password).length;
   const control=/[\u0000-\u001f\u007f]/;
@@ -470,8 +626,9 @@ maintenanceForm.onsubmit=async event=>{
   if(board?.maintenanceReady!==true||maintenanceJobs.get(mac)?.state==='waiting')return;
   const {action,account,password}=maintenanceForm.elements,selected=action.value;
   if(!Object.hasOwn(maintenanceDetails,selected))return;
+  if(maintenanceNetwork&&(!maintenanceNetwork.choice||maintenanceNetwork.busy))return;
   let params;
-  try{params=maintenanceParams(selected,account.value,password.value);}
+  try{params=maintenanceParams(selected,account.value,password.disabled?'':password.value);}
   catch(error){const message=$('#maintenance-status');message.textContent=error.message;message.classList.add('error');return;}
   const job={state:'waiting',message:'Enviando à placa…'};
   maintenanceJobs.set(mac,job);clearMaintenanceInputs();showMaintenanceStatus(mac);
@@ -487,6 +644,11 @@ maintenanceForm.onsubmit=async event=>{
     job.message=error.name==='AbortError'||error instanceof TypeError?'O envio não foi confirmado. Confira a placa antes de reenviar.':error.message;
   }
   showMaintenanceStatus(mac);
+  if(job.state==='done'&&selected==='wifi'&&maintenanceDialog.open&&maintenanceMac===mac&&maintenanceNetwork){
+    Object.assign(maintenanceNetwork,{current:null,editing:false,choice:null,items:null});
+    renderMaintenanceNetworks(maintenanceNetwork);
+    queryMaintenanceWifi('wifi-status');
+  }
 };
 const billingDialog=$('#billing-dialog');
 const billingForm=$('#billing-form');
@@ -816,7 +978,9 @@ async function boundedOperationApi(path,body){
   try{return await api(path,body,controller.signal);}
   finally{clearTimeout(timeout);}
 }
-function remoteQuery(mac,op,params,current,progress){
+function remoteQuery(mac,op,params,current,progress=()=>{}){
+  if((op==='wifi-status'||op==='wifi-scan')&&new URL(server).protocol!=='https:')
+    return Promise.reject(Error('A consulta de Wi-Fi exige o servidor de licenças em HTTPS.'));
   const prior=remoteQueues.get(mac);
   if(prior)progress('Aguardando a consulta anterior desta placa…');
   const task=(prior||Promise.resolve()).then(async()=>{
