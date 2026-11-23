@@ -136,7 +136,8 @@ main { flex: 1; width: min(100%,1460px); margin: auto; padding: 30px var(--space
 }
 .login p:not(.error) { color: var(--muted); font-size: 14px; }
 .login button.primary { margin-top: 2px; min-height: 46px; }
-footer { padding: 0 var(--space) 24px; color: var(--muted); text-align: center; font-size: 12.5px; }
+footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; padding: 0 var(--space) 24px; color: var(--muted); text-align: center; font-size: 12.5px; }
+footer a { color: var(--brand); white-space: nowrap; text-underline-offset: 2px; }
 
 #panel-overview {
   display: grid;
@@ -215,6 +216,18 @@ footer { padding: 0 var(--space) 24px; color: var(--muted); text-align: center; 
 .operation-result summary { cursor: pointer; font-weight: 650; }
 .operation-inline { display: flex; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
 .operation-inline button { min-height: 38px; padding: 6px 9px; }
+.firmware-form { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.firmware-form-fields { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }
+.firmware-form-fields label { flex: 1 1 145px; min-width: 0; }
+.firmware-form-fields label:has(input[type="file"]) { flex-basis: 245px; }
+.firmware-form-fields input[type="file"] { min-height: 44px; max-width: 100%; }
+.firmware-title { display: grid; gap: 6px; }
+.firmware-title .hint:empty, #firmware-jobs-note:empty { display: none; }
+.firmware-board .card-top { flex-wrap: wrap; }
+.firmware-board .card-top > div { flex: 1 1 132px; min-width: 0; }
+.firmware-board .badge { white-space: normal; }
+.firmware-progress { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.firmware-progress progress { width: 100%; min-height: 12px; accent-color: var(--brand); }
 
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 16px; }
 .stat {
@@ -518,6 +531,7 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
       <button type="button" id="overview-tab-devices" data-overview="devices" role="tab" aria-controls="overview-devices" aria-selected="true">Placas</button>
       <button type="button" id="overview-tab-clients" data-overview="clients" role="tab" aria-controls="overview-clients" aria-selected="false" tabindex="-1">Cadastros de licenças</button>
       <button type="button" id="overview-tab-reports" data-overview="reports" role="tab" aria-controls="overview-reports" aria-selected="false" tabindex="-1">Pedidos</button>
+      <button type="button" id="overview-tab-firmware" data-overview="firmware" role="tab" aria-controls="overview-firmware" aria-selected="false" tabindex="-1">Atualizações</button>
     </div></nav>
     <section id="overview-devices" role="tabpanel" aria-labelledby="overview-tab-devices">
       <div class="stats" id="stats"></div>
@@ -541,6 +555,20 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
       <div id="orders-result"></div>
       <div id="orders-pagination" class="order-paging" aria-label="Páginas do relatório" hidden><button type="button" id="orders-prev">Anterior</button><span id="orders-page"></span><button type="button" id="orders-next">Próxima</button></div>
     </section>
+    <section class="overview" id="overview-firmware" role="tabpanel" aria-labelledby="overview-tab-firmware" hidden>
+      <header class="overview-top"><div><h2>Atualizações das placas</h2><p>Placas preparadas recebem a versão pela internet. Mantenha o equipamento ligado durante a instalação.</p></div><button type="button" id="firmware-refresh">Atualizar situação</button></header>
+      <form class="firmware-form" id="firmware-upload-form">
+        <div class="firmware-title"><h3>Enviar uma versão</h3><p class="hint" id="firmware-file-help">Use o arquivo .bin do aplicativo preparado para atualização remota.</p></div>
+        <div class="firmware-form-fields"><label>Versão<input name="version" placeholder="0.21.1" maxlength="14" pattern="(?:0|[1-9][0-9]{0,3})\.(?:0|[1-9][0-9]{0,3})\.(?:0|[1-9][0-9]{0,3})" autocapitalize="none" spellcheck="false" required></label><label>Arquivo do aplicativo<input name="image" type="file" accept=".bin,application/octet-stream" aria-describedby="firmware-file-help" required></label><button type="submit" class="primary">Enviar versão</button></div>
+        <p class="hint" id="firmware-upload-note" role="status" hidden></p>
+      </form>
+      <div class="firmware-form">
+        <div class="firmware-title"><h3>Distribuir uma versão</h3><p class="hint" id="firmware-release-info"></p></div>
+        <div class="firmware-form-fields"><label>Versão a instalar<select id="firmware-release" disabled><option value="">Buscando versões…</option></select></label><button type="button" id="firmware-update-all" class="primary" disabled>Atualizar todas as elegíveis</button></div>
+        <p class="hint" id="firmware-jobs-note" role="status"></p>
+      </div>
+      <div class="list" id="firmware-board-list" aria-label="Situação da atualização por placa"></div>
+    </section>
     </section>
     </div>
     <section id="maintenance-page" class="maintenance-page" aria-labelledby="maintenance-title" hidden>
@@ -551,8 +579,8 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
   <form id="maintenance-form" class="maintenance-page-form" autocomplete="off">
     <p id="maintenance-status" role="status" aria-live="polite"></p>
     <fieldset id="maintenance-fields">
-      <label>Alteração<select name="action"><option value="owner">Administrador do painel local</option><option value="wifi">Wi-Fi do estabelecimento</option><option value="ap">Rede própria do ESP32</option></select></label>
-      <section id="maintenance-wifi" class="maintenance-wifi" aria-label="Rede Wi-Fi do ESP32" hidden>
+      <label>Alteração<select name="action"><option value="owner">Administrador do painel local</option><option value="wifi">Wi-Fi do estabelecimento</option><option value="ap">Rede própria do processador</option></select></label>
+      <section id="maintenance-wifi" class="maintenance-wifi" aria-label="Rede Wi-Fi do processador" hidden>
         <div class="maintenance-wifi-current" id="maintenance-wifi-current" hidden>
           <strong id="maintenance-wifi-current-name"></strong>
           <a id="maintenance-wifi-ip" target="_blank" rel="noopener noreferrer" hidden></a>
@@ -584,9 +612,10 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
     </section>
   </section>
 </main>
-<footer>Sistema criado por Felipe Bruno</footer>
+<footer><span>Sistema criado por Felipe Bruno</span><a href="tel:+5531985334434">(31) 98533-4434</a></footer>
 <dialog id="days-dialog"><form id="days-form"><h2>Liberar por dias</h2><p id="days-for" class="mac"></p><label>Quantos dias<input name="days" type="number" min="1" max="3660" step="1" value="15" required></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Liberar</button></div></form></dialog>
 <dialog id="edit-dialog"><form id="edit-form"><h2>Editar placa</h2><p id="edit-for" class="mac"></p><label>Observação (só aparece aqui)<input name="note" maxlength="200" placeholder="Ex.: cliente, telefone, forma de pagamento"></label><label>Liberada até<input name="date" type="date"></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Salvar</button></div></form></dialog>
+<dialog id="firmware-confirm" aria-labelledby="firmware-confirm-title"><form id="firmware-confirm-form"><h2 id="firmware-confirm-title">Confirmar atualização</h2><p id="firmware-confirm-description"></p><p class="hint">A atualização pode reiniciar a placa. Se estiver sem internet, ela começará quando voltar a se conectar.</p><p class="hint error" id="firmware-confirm-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" id="firmware-confirm-cancel">Cancelar</button><button class="primary" id="firmware-confirm-send">Agendar atualização</button></div></form></dialog>
 <dialog id="billing-dialog" aria-labelledby="billing-title">
   <form id="billing-form" autocomplete="off">
     <div><h2 id="billing-title">Pagamentos da licença</h2><p class="hint">A placa oferece renovação pela InfinitePay quando a licença vence.</p></div>
@@ -653,14 +682,16 @@ function editDate(t){
 const when=t=>{if(!t)return 'nunca';const s=serverTime-t;if(s<90)return 'agora há pouco';if(s<3600)return `há ${Math.round(s/60)} min`;if(s<86400)return `há ${Math.round(s/3600)} h`;return `há ${Math.round(s/86400)} dias (${day(t)})`;};
 function toast(t,err){clearTimeout(toastTimer);$('#toast').textContent=t;$('#toast').className=err?'err':'';$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,err?9000:4500);}
 const billingPath='/api/admin/billing';
+const firmwarePath='/api/admin/firmware/';
 async function api(path,body,signal){
   const url=new URL(server);
-  const secureRequest=path===billingPath||path.startsWith('/api/admin/maintenance/');
+  const secureRequest=path===billingPath||path.startsWith('/api/admin/maintenance/')||path.startsWith(firmwarePath);
   const local=url.protocol==='http:'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname);
   if((url.protocol!=='https:'&&(!local||secureRequest))||url.username||url.password||url.pathname!=='/'||url.search||url.hash){
     throw new Error('Entre com o endereço HTTPS do servidor de licenças.');
   }
-  const r=await fetch(new URL(path,url.origin),{method:body===undefined?'GET':'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:'error',signal});
+  const binary=body instanceof Blob;
+  const r=await fetch(new URL(path,url.origin),{method:body===undefined?'GET':'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':binary?'application/octet-stream':'application/json'},body:binary?body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:'error',signal});
   const j=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));
   if(!r.ok){const e=new Error(j.error||'Falha no servidor');e.status=r.status;throw e;}
   return j;
@@ -671,6 +702,7 @@ async function load(){
   refreshRemoteDevices();
   if(activeArea==='licenses'&&overview==='devices')render();
   if(activeArea==='licenses'&&overview==='clients')renderClients();
+  if(firmwareViewOpen()){renderFirmwareBoards();refreshFirmwareJobs();}
   if(maintenanceMac){restoreMaintenanceRoute();showMaintenanceStatus(maintenanceMac);}
 }
 function counts(){const c={all:devices.length,asking:0,active:0,expired:0,blocked:0};for(const d of devices){if(d.requested&&d.status!=='active')c.asking++;if(d.status==='active')c.active++;if(d.status==='expired'||d.status==='none')c.expired++;if(d.status==='blocked')c.blocked++;}return c;}
@@ -693,12 +725,13 @@ function card(d){
   ${asking?`<div class="ask">Pedindo acesso desde ${esc(when(d.requestedAt))}</div>`:''}
   <dl class="facts"><dt>Liberada até</dt><dd>${until}${d.plan&&d.status==='active'?' · '+planName[d.plan]:''}</dd><dt>Última conexão</dt><dd>${esc(when(d.lastSeen))}${d.version?' · v'+esc(d.version):''}</dd>${d.note?`<dt>Observação</dt><dd>${esc(d.note)}</dd>`:''}${d.hasCode?'':'<dt>Código</dt><dd>troca liberada (a próxima placa que conectar com este MAC fica registrada)</dd>'}</dl>
   <div class="actions"><button class="primary" data-act="month" data-mac="${d.mac}">Liberar 1 mês</button><button class="primary" data-act="year" data-mac="${d.mac}">Liberar 1 ano</button><button data-act="days" data-mac="${d.mac}">Dias…</button></div>
-  <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button><button data-act="maintenance" data-mac="${d.mac}">Acesso e Wi-Fi</button>${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div></article>`;
+  <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button><button data-act="maintenance" data-mac="${d.mac}">Acesso e Wi-Fi</button>${d.firmwareReady===true?`<button data-act="firmware" data-mac="${esc(d.mac)}">Atualizar placa</button>`:''}${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div></article>`;
 }
 let target='',originalExpiryDate='';
 async function act(what,mac,btn){
   const d=devices.find(x=>x.mac===mac);if(!d)return;
   if(what==='maintenance'){openMaintenance(d);return;}
+  if(what==='firmware'){openFirmwareBoard(mac);return;}
   const name=d.name||mac;target=mac;
   if(what==='days'){$('#days-for').textContent=`${name} · ${mac}`;$('#days-dialog').showModal();return;}
   if(what==='edit'){const f=$('#edit-form');f.note.value=d.note||'';originalExpiryDate=editDate(d.expires);f.date.value=originalExpiryDate;$('#edit-for').textContent=`${name} · ${mac}`;$('#edit-dialog').showModal();return;}
@@ -724,7 +757,7 @@ let maintenanceNetwork=null;
 const maintenanceDetails={
   owner:{name:'Novo usuário do administrador',password:'Nova senha do administrador',hint:'A troca encerra as sessões locais. Entre novamente com o novo usuário e a nova senha.',done:'Administrador atualizado. Entre novamente no painel local.'},
   wifi:{name:'Nome da rede Wi-Fi',password:'Senha da rede Wi-Fi',hint:'A placa precisa estar online para receber a alteração. Para rede aberta, deixe a senha em branco.',done:'A placa confirmou a configuração de Wi-Fi. Se o endereço local mudar, abra o painel pelo novo endereço.'},
-  ap:{name:'Novo nome da rede própria',password:'Nova senha da rede própria',hint:'Os aparelhos conectados à rede própria do ESP32 precisarão reconectar quando o novo nome e a nova senha entrarem em uso.',done:'Rede própria atualizada. Reconecte os aparelhos usando a nova configuração.'},
+  ap:{name:'Novo nome da rede própria',password:'Nova senha da rede própria',hint:'Os aparelhos conectados à rede própria do processador precisarão reconectar quando o novo nome e a nova senha entrarem em uso.',done:'Rede própria atualizada. Reconecte os aparelhos usando a nova configuração.'},
 };
 function clearMaintenanceInputs(){
   maintenanceForm.elements.account.value='';
@@ -758,7 +791,7 @@ function renderMaintenanceWifi(){
   const {current,busy,editing,items,choice}=view;
   const name=$('#maintenance-wifi-current-name'),ip=$('#maintenance-wifi-ip');
   $('#maintenance-wifi-current').hidden=!current;
-  name.textContent=current?.connected?(current.ssid?`Rede conectada: ${current.ssid}`:'Wi-Fi conectado'):'ESP32 sem conexão Wi-Fi';
+  name.textContent=current?.connected?(current.ssid?`Rede conectada: ${current.ssid}`:'Wi-Fi conectado'):'Processador sem conexão Wi-Fi';
   const address=current?.connected&&typeof current.ip==='string'&&/^(?:\d{1,3}\.){3}\d{1,3}$/.test(current.ip)&&
     current.ip.split('.').every(part=>String(Number(part))===part&&Number(part)<=255)&&current.ip!=='0.0.0.0'?current.ip:'';
   ip.hidden=!address;
@@ -819,7 +852,7 @@ async function queryMaintenanceWifi(op){
   if(!view||view.busy||maintenanceJobs.get(mac)?.state==='waiting')return;
   const current=()=>!maintenancePage.hidden&&maintenanceMac===mac&&maintenanceNetwork===view;
   view.busy=op;view.error=false;
-  view.message=op==='wifi-scan'?'Buscando redes próximas ao ESP32…':'Consultando a conexão do ESP32…';
+  view.message=op==='wifi-scan'?'Buscando redes próximas ao processador…':'Consultando a conexão do processador…';
   showMaintenanceStatus(mac);
   try{
     const result=await remoteQuery(mac,op,{},current);
@@ -831,7 +864,7 @@ async function queryMaintenanceWifi(op){
     if(op==='wifi-scan'){
       view.items=result.networks.filter(network=>typeof network?.ssid==='string'&&network.ssid&&typeof network.secured==='boolean'&&Number.isFinite(network.rssi));
       renderMaintenanceNetworks(view);
-      view.message=view.items.length?'Redes próximas ao ESP32. Escolha a rede do estabelecimento.':'Nenhuma rede encontrada. Busque novamente ou digite o nome.';
+      view.message=view.items.length?'Redes próximas ao processador. Escolha a rede do estabelecimento.':'Nenhuma rede encontrada. Busque novamente ou digite o nome.';
     }else view.message='';
   }catch(error){
     if(!current()||error===noOperation)return;
@@ -1099,6 +1132,8 @@ function showOverview(view){
   if(view==='clients')renderClients();
   if(view==='reports')loadOrders(orderPage);
   else ++orderLoad;
+  if(view==='firmware')loadFirmwareOverview();
+  else clearTimeout(firmware.poll);
 }
 for(const [index,button] of tabButtons.entries()){
   button.onclick=()=>showOverview(button.dataset.overview);
@@ -1117,6 +1152,198 @@ const registeredStatus=record=>Object.hasOwn(statusName,record.status)?record.st
 const registeredExpiry=record=>Number.isFinite(record.expires)&&record.expires>0?day(record.expires):'—';
 const simplify=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const sortedDevices=()=>[...devices].sort((a,b)=>(a.name||'').localeCompare(b.name||'','pt-BR')||(a.mac||'').localeCompare(b.mac||''));
+const firmwareUpload=$('#firmware-upload-form'),firmwareSelect=$('#firmware-release'),firmwareConfirm=$('#firmware-confirm');
+const firmware={releases:[],releaseId:'',jobs:new Map(),ready:false,uploading:false,sending:false,releaseRevision:0,jobRead:null,poll:0,confirmation:null,boardMarkup:''};
+const firmwareStates={
+  queued:['Aguardando conexão','pending'],downloading:['Baixando','needs_review'],installing:['Instalando','needs_review'],
+  restarting:['Reiniciando','needs_review'],complete:['Concluída','active'],failed:['Falhou','blocked'],
+};
+const firmwareBusy=job=>['queued','downloading','installing','restarting'].includes(job?.state);
+const firmwareViewOpen=()=>activeArea==='licenses'&&overview==='firmware'&&!maintenanceMac;
+const firmwareVersion=()=>firmware.releases.find(release=>release.id===firmware.releaseId);
+const firmwareVersionCode=version=>/^(?:0|[1-9][0-9]{0,3})\.(?:0|[1-9][0-9]{0,3})\.(?:0|[1-9][0-9]{0,3})$/.test(version||'')?
+  version.split('.').reduce((result,part)=>result*10000+Number(part),0):NaN;
+const firmwareCandidate=(board,release=firmwareVersion())=>board.firmwareReady===true&&release&&firmwareVersionCode(board.version)<firmwareVersionCode(release.version)&&
+  !firmwareBusy(firmware.jobs.get(board.mac))&&firmware.jobs.get(board.mac)?.state!=='complete';
+function firmwareMessage(id,message,error=false){
+  const notice=$(id);
+  notice.textContent=message;notice.classList.toggle('error',error);notice.hidden=!message;
+}
+function renderFirmwareBoards(){
+  const list=$('#firmware-board-list'),release=firmwareVersion(),canQueue=firmware.ready&&!firmware.sending;
+  const boards=sortedDevices();
+  $('#firmware-update-all').disabled=!canQueue||!boards.some(board=>firmwareCandidate(board,release));
+  const markup=boards.map(board=>{
+    const job=firmware.jobs.get(board.mac),eligible=board.firmwareReady===true;
+    const installed=firmwareVersionCode(board.version),incoming=firmwareVersionCode(release?.version);
+    const [label,tone]=job&&firmwareStates[job.state]||(!eligible?['Prepare por USB','none']:
+      release&&!Number.isFinite(installed)?['Versão não informada','none']:
+      release&&installed===incoming?['Já instalada','active']:release&&installed>incoming?['Versão mais recente','active']:
+      [release&&!firmware.ready?'Situação a confirmar':'Sem atualização agendada','none']);
+    const progress=job?Math.max(0,Math.min(100,Number.isFinite(job.progress)?Math.trunc(job.progress):(job.state==='complete'?100:0))):0;
+    return `<article class="card firmware-board" data-firmware-board="${esc(board.mac)}" tabindex="-1">
+      <div class="card-top"><div><h3>${esc(registeredName(board))}</h3><p class="mac">MAC ${esc(board.mac)}</p></div><span class="badge b-${tone}">${label}</span></div>
+      <dl class="facts"><dt>Versão instalada</dt><dd>${esc(job?.state==='complete'&&(!Number.isFinite(installed)||firmwareVersionCode(job.version)>installed)?job.version:board.version||'—')}</dd><dt>Última conexão</dt><dd>${esc(when(board.lastSeen))}</dd>${job?.updatedAt?`<dt>Situação desde</dt><dd>${esc(orderDate(job.updatedAt))}</dd>`:''}</dl>
+      ${job?`<div class="firmware-progress"><progress max="100" value="${progress}" aria-label="Progresso da atualização"></progress><span>${progress}%</span></div>`:''}
+      ${job?.state==='queued'?'<p class="hint">A placa começará quando se conectar à internet.</p>':''}
+      ${job?.state==='failed'&&job.error?`<p class="hint error">${esc(job.error)}</p>`:''}
+      ${!eligible?'<p class="hint">Prepare esta placa uma vez pelo USB para habilitar a atualização pelo painel.</p>':''}
+      ${eligible?`<div class="more"><button type="button" data-firmware-update="${esc(board.mac)}" ${canQueue&&firmwareCandidate(board,release)?'':'disabled'}>${job?.state==='failed'?'Agendar novamente':'Atualizar placa'}</button></div>`:''}
+      </article>`;
+  }).join('')||'<p class="empty">Nenhuma placa cadastrada.</p>';
+  if(firmware.boardMarkup===markup)return;
+  const focused=document.activeElement,board=focused?.closest('[data-firmware-board]')?.dataset.firmwareBoard;
+  firmware.boardMarkup=markup;list.innerHTML=markup;
+  if(board){
+    const card=[...list.children].find(item=>item.dataset.firmwareBoard===board);
+    (card?.querySelector('button:not(:disabled)')||card)?.focus({preventScroll:true});
+  }
+}
+function updateFirmwareRelease(){
+  const release=firmwareVersion(),info=$('#firmware-release-info');
+  info.textContent=release?`${new Intl.NumberFormat('pt-BR',{maximumFractionDigits:2}).format(release.size/1048576)} MB · Enviada em ${orderDate(release.createdAt)}`:'';
+  renderFirmwareBoards();
+}
+function setFirmwareRelease(id){
+  if(id!==firmware.releaseId){
+    firmware.releaseId=id;firmware.ready=false;firmware.jobs.clear();firmware.jobRead=null;
+  }
+  clearTimeout(firmware.poll);
+  updateFirmwareRelease();
+  if(id)refreshFirmwareJobs();
+  else firmwareMessage('#firmware-jobs-note','Envie uma versão para agendar a primeira atualização.');
+}
+function mergeFirmwareJobs(jobs){
+  for(const job of jobs){
+    if(!job||!Object.hasOwn(firmwareStates,job.state)||typeof job.mac!=='string')continue;
+    const previous=firmware.jobs.get(job.mac);
+    if(!previous||job.updatedAt>previous.updatedAt||job.updatedAt===previous.updatedAt&&firmwareBusy(job)&&!firmwareBusy(previous))
+      firmware.jobs.set(job.mac,job);
+  }
+}
+async function loadFirmwareOverview(preferred=''){
+  if(!firmwareViewOpen())return;
+  const revision=++firmware.releaseRevision;
+  renderFirmwareBoards();
+  if(!firmware.releases.length)firmwareMessage('#firmware-jobs-note','Buscando versões enviadas…');
+  try{
+    const result=await boundedOperationApi(firmwarePath+'releases');
+    if(revision!==firmware.releaseRevision||!firmwareViewOpen())return;
+    if(!Array.isArray(result.releases))throw Error('O servidor não devolveu a lista de versões.');
+    firmware.releases=result.releases.filter(release=>typeof release?.id==='string'&&release.id&&typeof release.version==='string'&&Number.isFinite(release.size));
+    const id=[preferred,firmware.releaseId,firmware.releases[0]?.id].find(candidate=>firmware.releases.some(release=>release.id===candidate))||'';
+    firmwareSelect.replaceChildren(...(firmware.releases.length?firmware.releases.map(release=>new Option(`Versão ${release.version}`,release.id)):[new Option('Nenhuma versão enviada','')]));
+    firmwareSelect.disabled=!firmware.releases.length;
+    firmwareSelect.value=id;
+    setFirmwareRelease(id);
+  }catch(error){
+    if(revision!==firmware.releaseRevision||!firmwareViewOpen())return;
+    firmware.ready=false;renderFirmwareBoards();
+    firmwareMessage('#firmware-jobs-note',error.name==='AbortError'?'O servidor demorou a responder. Atualize a situação para tentar novamente.':error.message,true);
+  }
+}
+async function refreshFirmwareJobs(){
+  const releaseId=firmware.releaseId;
+  if(!releaseId||!firmwareViewOpen()||document.hidden||firmware.jobRead)return;
+  clearTimeout(firmware.poll);
+  const read=firmware.jobRead={};
+  let failed=false;
+  if(!firmware.ready)firmwareMessage('#firmware-jobs-note','Consultando a situação das placas…');
+  try{
+    const result=await boundedOperationApi(firmwarePath+'jobs?'+new URLSearchParams({releaseId}));
+    if(read!==firmware.jobRead||!firmwareViewOpen())return;
+    if(!Array.isArray(result.jobs))throw Error('O servidor não devolveu a situação das placas.');
+    firmware.jobs.clear();mergeFirmwareJobs(result.jobs);
+    firmware.ready=true;
+    const available=devices.filter(board=>firmwareCandidate(board)).length;
+    const pending=[...firmware.jobs.values()].filter(firmwareBusy).length;
+    firmwareMessage('#firmware-jobs-note',`${available} ${available===1?'placa disponível':'placas disponíveis'}${pending?` · ${pending} ${pending===1?'atualização pendente ou em andamento':'atualizações pendentes ou em andamento'}`:''}.`);
+  }catch(error){
+    if(read!==firmware.jobRead||!firmwareViewOpen())return;
+    failed=true;firmware.ready=false;
+    const message=error.name==='AbortError'?'O servidor demorou a responder.':error.message;
+    firmwareMessage('#firmware-jobs-note',`${message}${firmware.jobs.size?' A tela mostra a última situação recebida.':''}`,true);
+  }finally{
+    if(read===firmware.jobRead){
+      firmware.jobRead=null;
+      if(firmwareViewOpen()){
+        renderFirmwareBoards();
+        const jobs=[...firmware.jobs.values()];
+        if(failed||jobs.some(firmwareBusy))firmware.poll=setTimeout(refreshFirmwareJobs,failed?10000:jobs.some(job=>firmwareBusy(job)&&job.state!=='queued')?5000:12000);
+      }
+    }
+  }
+}
+function openFirmwareBoard(mac){
+  showOverview('firmware');
+  const card=[...$('#firmware-board-list').children].find(item=>item.dataset.firmwareBoard===mac);
+  if(card){card.scrollIntoView({block:'center'});card.focus({preventScroll:true});}
+}
+function confirmFirmwareUpdate(mac=''){
+  const release=firmwareVersion(),board=devices.find(item=>item.mac===mac);
+  if(!release||!firmware.ready||firmware.sending)return;
+  const available=devices.filter(item=>firmwareCandidate(item,release)).length;
+  if(mac?(!board||!firmwareCandidate(board,release)):!available)return;
+  firmware.confirmation={releaseId:release.id,version:release.version,...(mac?{mac}:{all:true})};
+  $('#firmware-confirm-description').textContent=mac?`Instalar a versão ${release.version} em ${registeredName(board)} (${mac})?`:
+    `Agendar a versão ${release.version} para ${available} ${available===1?'placa elegível':'placas elegíveis'}? O servidor ignora quem já estiver com outra atualização em andamento.`;
+  firmwareMessage('#firmware-confirm-error','');
+  firmwareConfirm.showModal();$('#firmware-confirm-cancel').focus();
+}
+firmwareSelect.onchange=()=>setFirmwareRelease(firmwareSelect.value);
+$('#firmware-refresh').onclick=()=>loadFirmwareOverview();
+$('#firmware-update-all').onclick=()=>confirmFirmwareUpdate();
+$('#firmware-board-list').onclick=event=>{
+  const button=event.target.closest('[data-firmware-update]');
+  if(button&&!button.disabled)confirmFirmwareUpdate(button.dataset.firmwareUpdate);
+};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&firmwareViewOpen())refreshFirmwareJobs();});
+$('#firmware-confirm-cancel').onclick=()=>firmwareConfirm.close();
+firmwareConfirm.addEventListener('cancel',event=>{if(firmware.sending)event.preventDefault();});
+firmwareConfirm.addEventListener('close',()=>{if(!firmwareConfirm.open)firmware.confirmation=null;});
+$('#firmware-confirm-form').onsubmit=async event=>{
+  event.preventDefault();
+  if(firmware.sending||!firmware.confirmation)return;
+  const {releaseId,mac,all}=firmware.confirmation,submit=$('#firmware-confirm-send'),cancel=$('#firmware-confirm-cancel');
+  firmware.sending=submit.disabled=cancel.disabled=true;
+  firmwareMessage('#firmware-confirm-error','');
+  try{
+    const result=await boundedOperationApi(firmwarePath+'jobs',{releaseId,...(all?{all:true}:{mac})});
+    if(!Array.isArray(result.jobs))throw Error('O servidor não confirmou o agendamento. Atualize a situação antes de tentar novamente.');
+    const count=result.jobs.length,skipped=Number.isInteger(result.skipped)&&result.skipped>0?result.skipped:0;
+    firmwareConfirm.close();
+    toast(`${count} ${count===1?'atualização agendada':'atualizações agendadas'}${skipped?` · ${skipped} ${skipped===1?'placa ignorada':'placas ignoradas'}`:''}.`);
+    if(releaseId===firmware.releaseId){
+      mergeFirmwareJobs(result.jobs);
+      firmware.jobRead=null;firmware.ready=false;
+      refreshFirmwareJobs();
+    }
+  }catch(error){
+    firmwareMessage('#firmware-confirm-error',error.name==='AbortError'?'O agendamento não foi confirmado. Atualize a situação antes de tentar novamente.':error.message,true);
+  }finally{firmware.sending=submit.disabled=cancel.disabled=false;renderFirmwareBoards();}
+};
+firmwareUpload.onsubmit=async event=>{
+  event.preventDefault();
+  if(firmware.uploading)return;
+  const {version,image}=firmwareUpload.elements,file=image.files[0],label=version.value.trim();
+  if(!file||!file.size||!file.name.toLowerCase().endsWith('.bin')){
+    firmwareMessage('#firmware-upload-note','Escolha o arquivo .bin do aplicativo.',true);return;
+  }
+  if(file.size>0x300000){firmwareMessage('#firmware-upload-note','O arquivo .bin excede o limite de 3 MiB.',true);return;}
+  const submit=event.submitter||firmwareUpload.querySelector('button');
+  firmware.uploading=submit.disabled=true;
+  firmwareMessage('#firmware-upload-note','Enviando a versão…');
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),90000);
+  try{
+    const {release}=await api(firmwarePath+'releases?'+new URLSearchParams({version:label}),file,controller.signal);
+    if(!release?.id||release.version!==label)throw Error('O servidor não confirmou a versão. Atualize a situação antes de tentar novamente.');
+    firmwareUpload.reset();
+    firmwareMessage('#firmware-upload-note',`Versão ${label} disponível para agendar.`);
+    await loadFirmwareOverview(release.id);
+  }catch(error){
+    firmwareMessage('#firmware-upload-note',error.name==='AbortError'?'O envio não foi confirmado. Atualize a situação antes de tentar novamente.':error.message,true);
+  }finally{clearTimeout(timeout);firmware.uploading=submit.disabled=false;}
+};
 function overviewTable(columns,rows){
   return `<table class="overview-table" role="table"><thead><tr>${columns.map(([label,num])=>
     `<th scope="col"${num?' class="num"':''}>${label}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
@@ -1239,7 +1466,7 @@ function operationReadiness(){
   const status=$('#operation-capability');
   status.textContent=!board?'Selecione um estabelecimento para consultar o estacionamento.':ready?
     `Consultas disponíveis. Última conexão ${when(board.lastSeen)}.`:
-    'A partir da versão 0.19.5, o ESP32 habilita as consultas ao sincronizar pela internet. Em versões anteriores, use Configurações → Painel remoto → Autorizar consultas na placa, se a opção estiver disponível.';
+    'A partir da versão 0.19.5, o processador habilita as consultas ao sincronizar pela internet. Em versões anteriores, use Configurações → Painel remoto → Autorizar consultas no processador, se a opção estiver disponível.';
   status.classList.toggle('error',!!board&&!ready);
   $('#motion-submit').disabled=!ready||motion.loading;
   $('#people-submit').disabled=!ready||people.loading;
@@ -1279,7 +1506,7 @@ function showArea(area){
   if(area===activeArea)return;
   if(activeArea==='movement'&&motion.loading)resetOperation('motion');
   if(activeArea==='people'&&people.loading)resetOperation('people');
-  if(activeArea==='licenses')++orderLoad;
+  if(activeArea==='licenses'){++orderLoad;clearTimeout(firmware.poll);}
   activeArea=area;
   for(const button of areaButtons){
     const selected=button.dataset.area===area;
@@ -1757,6 +1984,7 @@ $('#search').oninput=render;
 $('#refresh').onclick=()=>{
   load().catch(e=>toast(e.message,true));
   if(activeArea==='licenses'&&overview==='reports')loadOrders(orderPage);
+  if(firmwareViewOpen())loadFirmwareOverview();
   if(activeArea==='movement'&&motion.query)loadMotion(motion.page);
   if(activeArea==='people'&&people.query)loadPeople(people.page);
 };
