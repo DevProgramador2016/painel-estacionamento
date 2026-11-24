@@ -498,6 +498,296 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
   #operation-receipt :is(header,.remote-receipt-actions,#operation-receipt-message) { display: none !important; }
   .remote-receipt-paper { margin: 0; }
 }
+
+/* =====================================================================
+   VISUAL 3D PREMIUM · Painel de licenças (web e aplicativo)
+   Camada final: só aparência. IDs, classes e scripts continuam os mesmos.
+   ===================================================================== */
+:root{
+  --bg:#e8eef5;--surface:#ffffff;--surface-2:#f3f7fb;--ink:#0f1b2d;--muted:#55667b;--line:#d3dde9;
+  --brand:#07745b;--brand-hover:#065f4b;--brand-soft:#e0f6ef;--brand-raised:#0f9677;--brand-edge:#05523f;
+  --navy:#0a1424;--ok:#0b7a55;--ok-soft:#ddf5ea;--late:#c02a43;--late-soft:#fde8ec;--warn-ink:#7a4e0c;--warn-soft:#fff3da;
+  --radius:20px;
+  --hl:inset 0 1px 0 #ffffffe6;
+  --edge:#b9c5d4;--slab:#cbd6e3;
+  --surface-shadow:inset 0 1px 0 #ffffffe6,0 3px 0 -1px var(--slab),0 1px 1px #0f1b2d0d,0 12px 24px -10px #0f1b2d29,0 30px 60px -30px #0f1b2d40;
+  --deep-shadow:inset 0 1px 0 #ffffffe6,0 4px 0 -1px var(--slab),0 2px 3px #0f1b2d14,0 16px 30px -8px #0f1b2d3d,0 40px 80px -30px #0f1b2d66;
+  --glow:0 0 0 4px #0a947426;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+body{
+  font-family:"Segoe UI Variable Text","SF Pro Text","Inter","Aptos",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  background:
+    radial-gradient(1100px 520px at 100% -8%,#bff0e055,transparent 62%),
+    radial-gradient(900px 520px at -10% 105%,#c8d8f888,transparent 60%),
+    radial-gradient(#0f1b2d0c 1px,transparent 1.2px) 0 0/22px 22px,
+    var(--bg);
+  background-attachment:fixed,fixed,scroll,fixed;
+}
+h2{font-weight:800;letter-spacing:-.035em}
+h3{letter-spacing:-.02em}
+.mac{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;letter-spacing:.02em}
+
+/* ---- botões: tecla com espessura ---- */
+button{
+  border-radius:13px;border-color:var(--line);
+  background:linear-gradient(180deg,#fff 0%,var(--surface-2) 100%);
+  box-shadow:var(--hl),0 1px 0 var(--edge),0 2px 0 var(--edge),0 6px 12px -6px #0f1b2d40;
+  font-weight:680;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;text-align:center;
+  transition:transform .12s var(--ease),box-shadow .12s var(--ease),filter .15s,border-color .15s,background .15s;
+}
+button:hover:not(:disabled){border-color:color-mix(in srgb,var(--brand) 55%,var(--line));background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--brand-soft) 60%,#fff));transform:translateY(-1px);box-shadow:var(--hl),0 1px 0 var(--edge),0 3px 0 var(--edge),0 12px 20px -10px #0f1b2d59}
+button:not(:disabled):active{transform:translateY(2px);box-shadow:var(--hl),0 0 0 var(--edge),0 2px 6px -3px #0f1b2d59}
+button:disabled{box-shadow:var(--hl);transform:none}
+button.primary{
+  color:#fff;border-color:var(--brand-edge);
+  background:linear-gradient(180deg,var(--brand-raised) 0%,var(--brand) 60%,#066650 100%);
+  box-shadow:inset 0 1px 0 #ffffff59,inset 0 -2px 0 #0000001f,0 1px 0 var(--brand-edge),0 3px 0 var(--brand-edge),0 12px 22px -10px #0a9474d9;
+  text-shadow:0 1px 0 #0000002e;
+}
+button.primary:hover:not(:disabled){border-color:var(--brand-edge);background:linear-gradient(180deg,#12a986 0%,#088166 60%,#066650 100%);filter:saturate(1.05);box-shadow:inset 0 1px 0 #ffffff59,inset 0 -2px 0 #0000001f,0 1px 0 var(--brand-edge),0 4px 0 var(--brand-edge),0 16px 26px -10px #0a9474e6}
+button.primary:not(:disabled):active{box-shadow:inset 0 2px 4px #0000002e,0 0 0 var(--brand-edge),0 4px 10px -6px var(--brand-edge)}
+button.danger{color:var(--late);border-color:#efc0c8;background:linear-gradient(180deg,#fff,#fff3f5)}
+button.danger:hover:not(:disabled){color:#fff;border-color:#8d1a2e;background:linear-gradient(180deg,#e2546a,#c02a43 65%,#a81f37);box-shadow:inset 0 1px 0 #ffffff47,0 1px 0 #8d1a2e,0 3px 0 #8d1a2e,0 12px 22px -10px #c02a43b3}
+.access-action{background:none!important;box-shadow:none!important;transform:none!important;border-color:transparent!important;text-decoration:underline;text-underline-offset:.25em}
+:focus-visible{outline:3px solid #2f7cf6;outline-offset:3px}
+
+/* ---- campos rebaixados ---- */
+input:not([type="checkbox"]):not([type="radio"]),select,textarea{
+  border-radius:12px;border-color:var(--line);
+  background:linear-gradient(180deg,#f5f8fc,#fff);
+  box-shadow:inset 0 2px 4px #0f1b2d12,inset 0 1px 1px #0f1b2d0f,0 1px 0 #ffffffb3;
+  transition:border-color .15s,box-shadow .15s;
+}
+input:not([type="checkbox"]):not([type="radio"]):focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:inset 0 2px 4px #0f1b2d12,var(--glow);outline:0}
+input[type="file"]{padding-block:7px}
+input[type="file"]::file-selector-button{margin-right:10px;padding:7px 12px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#fff,var(--surface-2));box-shadow:var(--hl),0 2px 0 var(--edge);font:inherit;font-weight:650;color:var(--ink);cursor:pointer}
+label{color:#1c2c40}
+.check input{accent-color:var(--brand)}
+
+/* ---- cabeçalho em vidro escuro ---- */
+.top{
+  position:relative;border-bottom:0;
+  background:
+    radial-gradient(600px 200px at 85% -40%,#22d3a559,transparent 70%),
+    radial-gradient(500px 220px at 0 140%,#3b6fe040,transparent 70%),
+    linear-gradient(120deg,#0b1626,#0e2236 60%,#0b2a2a);
+  box-shadow:inset 0 -1px 0 #ffffff14,0 10px 30px -14px #020814cc;
+}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,transparent,#2be0b2 30%,#6fa3ff 70%,transparent);opacity:.75}
+.mark{
+  border:1px solid #9cf5dc;color:#042a20;
+  background:radial-gradient(circle at 30% 20%,#ffffffcc,transparent 45%),linear-gradient(150deg,#4ff0c5,#0ea27f 60%,#08775d);
+  box-shadow:inset 0 1px 0 #ffffffb3,inset 0 -3px 6px #0659457a,0 3px 0 #05523f,0 10px 18px -6px #0ea27fa6;
+}
+.top h1{font-weight:800;letter-spacing:-.03em}
+.top button{
+  color:#eaf6ff;border-color:#ffffff24;background:linear-gradient(180deg,#ffffff17,#ffffff08);
+  box-shadow:inset 0 1px 0 #ffffff26,0 2px 0 #020814,0 8px 16px -8px #000c;
+}
+.top button:hover:not(:disabled){color:#fff;border-color:#7ef2d1;background:linear-gradient(180deg,#ffffff26,#ffffff0d);box-shadow:inset 0 1px 0 #ffffff33,0 3px 0 #020814,0 12px 20px -8px #000}
+
+/* ---- superfícies elevadas (laje) ---- */
+.login,.overview,.operation-target,.maintenance-page-form,.card,.stat{
+  border-color:color-mix(in srgb,var(--line) 80%,transparent);
+  background:linear-gradient(180deg,#fff 0%,#f8fafd 100%);
+  box-shadow:var(--surface-shadow);
+}
+.login{border-top:0;border-radius:26px;position:relative;overflow:hidden;padding-top:clamp(28px,4.5vw,42px)}
+.login::before{content:"";position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,#2be0b2,#0a9474 45%,#2f6fe0)}
+.login h2{font-size:clamp(25px,3vw,30px)}
+
+/* ---- navegação lateral (web) ---- */
+#area-tabs{
+  border:1px solid #ffffff14;border-radius:20px;padding:10px;gap:6px;
+  background:radial-gradient(260px 200px at 0 0,#14c2963a,transparent 65%),linear-gradient(180deg,#0f1d31,#08111e);
+  box-shadow:inset 0 1px 0 #ffffff1a,0 4px 0 #020814,0 24px 40px -20px #020814cc;
+}
+#area-tabs button{border:1px solid transparent;background:transparent;box-shadow:none;color:#d4e1ee;justify-content:flex-start;border-radius:13px}
+#area-tabs button:hover:not(:disabled):not([aria-selected="true"]){background:#ffffff12;color:#fff;transform:translateX(2px);box-shadow:none}
+#area-tabs button[aria-selected="true"]{
+  color:#032a20;border-color:#7ef2d1;background:linear-gradient(180deg,#2be0b2,#0e9f7e);
+  box-shadow:inset 0 1px 0 #ffffff8c,0 2px 0 #06644e,0 10px 18px -8px #10c69bcc;
+}
+
+/* ---- trilhos de abas ---- */
+.tabs{border-radius:15px;border-color:color-mix(in srgb,var(--line) 85%,transparent);background:#e3eaf3;box-shadow:inset 0 2px 5px #0f1b2d17,0 1px 0 #ffffffb3}
+.tabs button{background:transparent;box-shadow:none;border:1px solid transparent;border-radius:11px;color:var(--muted);transform:none}
+.tabs button:hover:not(:disabled):not([aria-pressed="true"]):not([aria-selected="true"]){background:#ffffff8c;box-shadow:none;transform:none;color:var(--ink)}
+.tabs button[aria-pressed="true"],.tabs button[aria-selected="true"]{
+  color:var(--brand-hover);border-color:color-mix(in srgb,var(--brand) 28%,var(--line));
+  background:linear-gradient(180deg,#fff,#f4f8fc);
+  box-shadow:var(--hl),0 1px 0 var(--edge),0 6px 12px -6px #0f1b2d59;
+}
+
+/* ---- indicadores ---- */
+.stats{gap:14px}
+.stat{position:relative;overflow:hidden;border-radius:18px}
+.stat::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:linear-gradient(90deg,#2be0b2,transparent 85%)}
+.stat:nth-child(2)::before{background:linear-gradient(90deg,#5be38f,transparent 85%)}
+.stat:nth-child(3)::before{background:linear-gradient(90deg,#ff8fa1,transparent 85%)}
+.stat:nth-child(4)::before{background:linear-gradient(90deg,#ffd27a,transparent 85%)}
+.stat span{font-weight:650;letter-spacing:.01em}
+.stat strong{font-weight:820;letter-spacing:-.045em;color:var(--ink)}
+.stat.wait{background:linear-gradient(180deg,#fffaf0,#fff3da);border-color:#efd59a}
+
+/* ---- cartões das placas (web) ---- */
+.list{gap:18px}
+.card{display:flex;flex-direction:column;gap:13px;border-radius:20px;position:relative;transition:transform .2s var(--ease),box-shadow .2s var(--ease)}
+.card{border-top:4px solid #12b48c}
+.card:has(>.card-top>.b-none,.android-board-status>.badge:first-child.b-none){border-top-color:#a9b6c7}
+.card:has(>.card-top>:is(.b-expired,.b-blocked),.android-board-status>.badge:first-child:is(.b-expired,.b-blocked)){border-top-color:#d9475e}
+.card.asking{border-top-color:#e9a531}
+@media (hover:hover){.card:hover{transform:translateY(-3px);box-shadow:var(--deep-shadow)}}
+.card h3{font-weight:800;letter-spacing:-.03em}
+.card .facts{padding:10px 12px;border:1px solid color-mix(in srgb,var(--line) 75%,transparent);border-radius:13px;background:var(--surface-2);box-shadow:inset 0 1px 3px #0f1b2d0f}
+.card .facts dd{font-weight:650}
+.card>.actions{margin-top:auto;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px}
+.card>.actions button{white-space:nowrap;padding-inline:10px;min-height:44px}
+.card>.actions .wide{grid-column:1/-1}
+.card>.more{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;border-top:1px dashed color-mix(in srgb,var(--line) 90%,transparent);padding-top:13px}
+.card>.more button{min-height:42px;width:100%;padding-inline:8px;font-size:13px;overflow-wrap:normal}
+.card>.more button:last-child:nth-child(odd){grid-column:1/-1}
+.ask{border:1px solid #efd59a;box-shadow:var(--hl)}
+.firmware-board>.more{display:flex}
+
+/* ---- selos ---- */
+.badge{border:1px solid color-mix(in srgb,currentColor 18%,transparent);box-shadow:var(--hl),0 1px 2px #0f1b2d1a;padding:4px 10px;font-weight:760;letter-spacing:.01em}
+
+/* ---- blocos internos ---- */
+.overview{border-radius:22px}
+.overview-top h2{font-size:clamp(22px,2.2vw,28px)}
+.operation-filters,.firmware-form,.access-forms form,.payment-action,.order-summary li,.operation-cards div,.finance-metrics>div,.finance-plans>div,.maintenance-wifi-current{
+  border-color:color-mix(in srgb,var(--line) 80%,transparent);
+  background:linear-gradient(180deg,var(--surface-2),#eef3f9);
+  box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 #0f1b2d08;
+  border-radius:15px;
+}
+.operation-cards div,.finance-metrics>div,.finance-plans>div,.order-summary li{background:linear-gradient(180deg,#fff,var(--surface-2));box-shadow:var(--hl),0 2px 0 -1px var(--slab),0 8px 16px -10px #0f1b2d40}
+.operation-cards dd,.finance-metrics dd,.finance-plans dd{font-weight:820;letter-spacing:-.03em}
+.finance-metrics .finance-balance{background:linear-gradient(180deg,#e9fbf4,#d3f3e6);border-color:#9fdcc5}
+.empty{border-radius:16px;background:repeating-linear-gradient(135deg,#f6f9fc 0 12px,#f1f5fa 12px 24px);border-color:#bccadb}
+
+/* ---- tabelas ---- */
+.overview-table{border:1px solid color-mix(in srgb,var(--line) 85%,transparent);border-radius:14px;overflow:hidden;background:#fff;box-shadow:var(--hl),0 8px 18px -14px #0f1b2d59}
+.overview-table th{background:linear-gradient(180deg,#f4f7fb,#e9eff6);text-transform:uppercase;letter-spacing:.04em;font-size:11.5px;color:#4b5c71}
+.overview-table tbody tr{transition:background .12s}
+.overview-table tbody tr:hover{background:#f2fbf8}
+@media (max-width:700px){
+  .overview-table{border:0;background:transparent;box-shadow:none;overflow:visible}
+  .overview-table tbody tr{border-radius:15px;background:linear-gradient(180deg,#fff,var(--surface-2));box-shadow:var(--hl),0 3px 0 -1px var(--slab),0 10px 18px -12px #0f1b2d4d}
+}
+
+/* ---- diálogos e avisos ---- */
+dialog{border-radius:24px;border-color:color-mix(in srgb,var(--line) 70%,transparent);background:linear-gradient(180deg,#fff,#f5f8fc);box-shadow:inset 0 1px 0 #fff,0 2px 4px #0f1b2d1f,0 40px 100px -30px #020814e6}
+dialog::backdrop{background:radial-gradient(circle at 50% 30%,#0b1a2bb3,#03080fe6);backdrop-filter:blur(6px)}
+.payments-header button,[data-access-close][aria-label]{width:44px;height:44px;min-height:44px;padding:0;border-radius:14px;flex:none}
+.dialog-actions{gap:10px}
+.dialog-actions button{min-width:120px}
+#toast{border-radius:15px;border-left:0;background:linear-gradient(180deg,#152a40,#0a1626);box-shadow:inset 0 1px 0 #ffffff1f,inset 4px 0 0 #2be0b2,0 20px 40px -16px #020814}
+#toast.err{background:linear-gradient(180deg,#a8243a,#7d1a2c);box-shadow:inset 0 1px 0 #ffffff26,inset 4px 0 0 #ffc2cc,0 20px 40px -16px #020814}
+#maintenance-status:not(:empty){border:1px solid #a8e3cf;box-shadow:var(--hl)}
+.maintenance-wifi-network{border-radius:14px}
+.maintenance-wifi-network[aria-pressed="true"]{box-shadow:inset 4px 0 0 var(--brand),var(--hl),0 2px 0 var(--edge)}
+progress{accent-color:var(--brand);height:12px;border-radius:99px}
+footer{color:#5c6c80}
+
+/* ---- alinhamento das barras de filtro ---- */
+.operation-period,.operation-client-search,.order-filters,.finance-filters,.firmware-form-fields,.payment-filters{align-items:end}
+.operation-period>button,.operation-client-search>button,.order-filters>button,.finance-filters>button,.firmware-form-fields>button,.payment-filters>button{min-height:46px}
+.overview-top>button{align-self:center}
+.bar{gap:12px}
+.bar input{min-height:46px}
+
+/* ======================= APLICATIVO ANDROID ======================= */
+.android-intro{
+  border:1px solid #ffffff1f;border-radius:24px;
+  background:radial-gradient(420px 200px at 100% 0,#22d3a54d,transparent 65%),radial-gradient(300px 180px at 0 100%,#3b6fe033,transparent 65%),linear-gradient(135deg,#0f2236,#0a1626 60%,#0b1d2a);
+  box-shadow:inset 0 1px 0 #ffffff2e,0 4px 0 #050c16,0 24px 40px -20px #020814cc;
+}
+.android-intro h2{font-weight:820;letter-spacing:-.045em}
+.android-intro button{color:#032a20;border-color:#7ef2d1;background:linear-gradient(180deg,#2be0b2,#0e9f7e);box-shadow:inset 0 1px 0 #ffffff8c,0 2px 0 #06644e,0 10px 18px -8px #10c69bcc;text-shadow:none}
+.android-intro button:hover:not(:disabled){background:linear-gradient(180deg,#45e8bf,#10ad89);border-color:#9cf5dc}
+.stat{background:linear-gradient(180deg,#fff 0%,#f6f9fc 100%)}
+.stat strong{color:var(--ink)}
+.board-card{border-color:color-mix(in srgb,var(--line) 80%,transparent);background:linear-gradient(180deg,#fff,#f7fafd);box-shadow:var(--surface-shadow)}
+.board-card.asking{box-shadow:inset 0 4px 0 var(--lane),var(--surface-shadow)}
+.board-mark{
+  border:1px solid #9cf5dc;color:#042a20;border-radius:15px;
+  background:radial-gradient(circle at 30% 20%,#ffffffcc,transparent 45%),linear-gradient(150deg,#4ff0c5,#0ea27f 60%,#08775d);
+  box-shadow:inset 0 1px 0 #ffffffb3,inset 0 -3px 6px #0659457a,0 3px 0 #05523f,0 10px 18px -6px #0ea27fa6;
+}
+.board-meta>div{border-color:color-mix(in srgb,var(--line) 80%,transparent);background:linear-gradient(180deg,var(--surface-2),#eef3f9);box-shadow:inset 0 2px 4px #0f1b2d0d,0 1px 0 #fff;border-radius:14px;padding:10px 12px}
+.board-meta strong{font-weight:780}
+.board-renew{border-color:color-mix(in srgb,var(--line) 80%,transparent);background:linear-gradient(180deg,#f3fbf8,#e6f4ef);box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 #0f1b2d08;border-radius:17px;padding:12px}
+.board-renew-actions{gap:8px}
+.board-renew-actions button{white-space:nowrap;font-size:13.5px}
+.board-renew-actions button.primary{box-shadow:inset 0 1px 0 #ffffff59,inset 0 -2px 0 #0000001f,0 1px 0 var(--brand-edge),0 3px 0 var(--brand-edge),0 10px 18px -10px #0a9474d9}
+.board-tools{gap:8px}
+.board-tools button{background:linear-gradient(180deg,#fff,var(--surface-2));box-shadow:var(--hl),0 1px 0 var(--edge),0 2px 0 var(--edge),0 6px 12px -6px #0f1b2d40;font-size:13px}
+.board-options,.report-advanced{border-color:color-mix(in srgb,var(--line) 85%,transparent);border-radius:15px;background:linear-gradient(180deg,#fff,var(--surface-2));box-shadow:var(--hl),0 2px 0 -1px var(--slab),0 8px 14px -10px #0f1b2d40}
+.board-options summary,.report-advanced summary{min-height:48px;padding:8px 14px;color:var(--ink)}
+.board-option-buttons{gap:8px;padding:10px}
+.board-option-buttons button.danger{color:var(--late);background:linear-gradient(180deg,#fff,#fff3f5);border-color:#efc0c8}
+.report-selector-group{border-color:color-mix(in srgb,var(--line) 80%,transparent);border-radius:18px;background:linear-gradient(180deg,#f4f7fb,#e9eff6);box-shadow:inset 0 2px 5px #0f1b2d12,0 1px 0 #fff;padding:10px}
+.report-selector-group>h3{color:#3c4d63;text-transform:uppercase;letter-spacing:.06em;font-size:11px}
+.report-options{gap:8px}
+.report-options button{color:#203247;border-color:var(--line);border-radius:13px;background:linear-gradient(180deg,#fff,var(--surface-2));box-shadow:var(--hl),0 1px 0 var(--edge),0 2px 0 var(--edge),0 6px 12px -6px #0f1b2d40}
+.report-options .android-icon{color:var(--brand)}
+.report-options button[aria-pressed="true"]{color:#fff;border-color:var(--brand-edge);background:linear-gradient(180deg,var(--brand-raised),var(--brand) 60%,#066650);box-shadow:inset 0 1px 0 #ffffff59,0 1px 0 var(--brand-edge),0 3px 0 var(--brand-edge),0 12px 22px -10px #0a9474d9;transform:translateY(1px)}
+.report-options button[aria-pressed="true"] .android-icon{color:#eafff8}
+#motion-filter-count{background:var(--brand);color:#fff;box-shadow:0 2px 0 var(--brand-edge)}
+.android-nav{
+  bottom:calc(8px + env(safe-area-inset-bottom,0px));width:min(100% - 16px,var(--android-width));padding:6px;border-radius:24px;border:1px solid #ffffff1f;
+  background:linear-gradient(180deg,#14243ae6,#070d18f5);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);
+  box-shadow:inset 0 1px 0 #ffffff26,0 3px 0 #02060c,0 20px 40px -12px #000c;
+}
+.android-nav button{background:transparent;box-shadow:none;border:1px solid transparent;border-radius:18px;color:#c9d8e6;transform:none}
+.android-nav button:hover:not(:disabled):not([aria-current="page"]):not([aria-expanded="true"]){background:#ffffff12;box-shadow:none;transform:none;border-color:transparent}
+.android-nav button[aria-current="page"],.android-nav button[aria-expanded="true"],.android-nav button[aria-current="page"]:hover:not(:disabled),.android-nav button[aria-expanded="true"]:hover:not(:disabled){
+  color:#032a20;border-color:#7ef2d1;background:linear-gradient(180deg,#2be0b2,#0e9f7e);
+  box-shadow:inset 0 1px 0 #ffffff8c,0 2px 0 #06644e,0 10px 18px -8px #10c69bcc;
+}
+body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-bar) + env(safe-area-inset-bottom,0px) + 28px)}
+#toast{bottom:calc(var(--android-bar) + env(safe-area-inset-bottom,0px) + 22px)}
+.android-sheet{border-radius:28px 28px 0 0;background:linear-gradient(180deg,#fff,#f3f7fb);box-shadow:inset 0 1px 0 #fff,0 -20px 60px -20px #020814cc}
+.android-sheet::before{content:"";display:block;width:44px;height:5px;margin:0 auto 10px;border-radius:99px;background:#c3cedb}
+.android-menu{gap:8px}
+.android-menu button{justify-content:flex-start;min-height:52px;padding-inline:14px}
+.android-menu button.danger{color:var(--late)}
+.android-board-status .b-contact{border:1px solid #a7d8ce}
+@media (prefers-reduced-motion:reduce){button,.card,.android-nav button{transition:none!important;transform:none!important}}
+@media print{body{background:#fff}.top::after{display:none}}
+/* ---- celular: grades regulares para cabeçalho e abas ---- */
+@media (max-width:700px){
+  .top .right:has(#access-settings){display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}
+  .top .right:has(#access-settings)>#updated{grid-column:1/-1;margin:0}
+  .top .right:has(#access-settings)>:is(#billing,#payments,#access-settings){grid-column:span 2}
+  .top .right:has(#access-settings)>:is(#refresh,#logout){grid-column:span 3}
+  .top .right:has(#access-settings) button{width:100%;padding-inline:6px;white-space:nowrap}
+  .tabs{display:grid;width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tabs:has(>:nth-child(2):last-child),.tabs:has(>:nth-child(4):last-child),.tabs:has(>:nth-child(5):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tabs:has(>:nth-child(5):last-child)>:last-child{grid-column:1/-1}
+  .tabs button{min-width:0;padding-inline:6px;white-space:normal;line-height:1.2}
+  #area-tabs{display:grid}
+  .operation-period>button,.operation-client-search>button,.finance-filters>button,.firmware-form-fields>button{flex:1 1 100%;width:100%}
+  .order-filters>button,.payment-filters>button{grid-column:1/-1;width:100%}
+}
+@media (max-width:380px){.android-nav{width:calc(100% - 10px);padding:4px}.android-nav button{font-size:10.5px;letter-spacing:-.02em}}
+.tabs button{overflow-wrap:normal;word-break:normal}
+@media (max-width:420px){
+  .card>.actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .card>.actions button{white-space:normal}
+  .card>.actions button:last-child:nth-child(odd){grid-column:1/-1}
+  .top .right:has(#access-settings) button{font-size:12.5px;padding-inline:3px}
+  .tabs button{font-size:13px;padding-inline:3px}
+}
+#maintenance-current-password-row { display:grid; gap:4px; }
+#maintenance-current-password { max-width:100%; font-family:ui-monospace,monospace; overflow-wrap:anywhere; }
+#maintenance-current-name { overflow-wrap:anywhere; }
+.operation-result details > div + div { margin-top:8px; }
 </style>
 </head>
 <body>
@@ -525,8 +815,8 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
     <section class="overview" id="area-movement" role="tabpanel" aria-labelledby="area-tab-movement">
       <div class="overview-top"><div><h2>Movimentação do estacionamento</h2><p>Consulte a placa selecionada. Os períodos seguem o horário de Brasília.</p></div></div>
       <div class="tabs operation-views" id="operation-views" role="group" aria-label="Relatórios de movimentação">
-        <button type="button" data-motion="visits" aria-pressed="true">Atendimentos</button><button type="button" data-motion="plates" aria-pressed="false">Placas por modalidade</button>
-        <button type="button" data-motion="summary" aria-pressed="false">Resumo</button><button type="button" data-motion="cash" aria-pressed="false">Caixa</button><button type="button" data-motion="monthly-payments" aria-pressed="false">Mensalidades</button>
+        <button type="button" data-motion="visits" aria-pressed="true">Atendimentos detalhados</button><button type="button" data-motion="plates" aria-pressed="false">Placas no período</button>
+        <button type="button" data-motion="summary" aria-pressed="false">Resumo</button><button type="button" data-motion="cash" aria-pressed="false">Caixa por data do pagamento</button><button type="button" data-motion="monthly-payments" aria-pressed="false">Mensalidades recebidas</button>
       </div>
       <form id="motion-form">
         <div class="operation-period"><label>Período<select name="period"><option value="day">Dia</option><option value="week">Semana</option><option value="month">Mês</option><option value="year">Ano</option></select></label>
@@ -643,6 +933,15 @@ dialog form { display: grid; gap: 14px; min-width: 0; }
           <button id="maintenance-wifi-manual" type="button" hidden>Digitar nome da rede</button>
         </div>
         <div id="maintenance-wifi-list" role="group" aria-label="Redes Wi-Fi encontradas" hidden></div>
+      </section>
+      <section id="maintenance-current" class="maintenance-wifi-current" aria-label="Configuração atual">
+        <strong id="maintenance-current-title">Configuração atual</strong>
+        <div id="maintenance-current-name" role="status"></div>
+        <div id="maintenance-current-password-row" hidden>
+          <label for="maintenance-current-password">Senha atual da rede</label>
+          <output id="maintenance-current-password" aria-live="off"></output>
+        </div>
+        <small id="maintenance-current-hint" class="hint"></small>
       </section>
       <div id="maintenance-inputs">
         <label><span id="maintenance-name-label">Novo usuário do administrador</span><input name="account" required autocomplete="off" spellcheck="false" autocapitalize="none"></label>
@@ -916,6 +1215,76 @@ const maintenanceJobs=new Map();
 const maintenanceRoute='#acesso-wifi=';
 let maintenanceMac='';
 let maintenanceNetwork=null;
+let maintenanceInfo=null,maintenanceLookup=0,maintenancePasswordRevision=0;
+const maintenancePasswordReads=new Map();
+function remoteNetworkInfoReady(board){
+  return board?.maintenanceReady===true&&firmwareVersionCode(board.version)>=firmwareVersionCode('0.22.0');
+}
+function renderMaintenanceCurrent(){
+  const selected=maintenanceForm.elements.action.value,board=devices.find(device=>device.mac===maintenanceMac);
+  const ready=remoteNetworkInfoReady(board),name=$('#maintenance-current-name'),hint=$('#maintenance-current-hint');
+  const stored=selected==='owner'?maintenanceInfo?.adminUsername:selected==='ap'?maintenanceInfo?.apSsid:maintenanceInfo?.wifiSsid;
+  $('#maintenance-current-title').textContent=selected==='owner'?'Usuário atual':selected==='ap'?'Rede própria atual':'Rede Wi-Fi configurada';
+  $('#maintenance-current-password-row').hidden=selected==='owner'||!ready;
+  name.textContent=stored||(maintenanceInfo?.error?'Configuração atual indisponível.':!ready?'Indisponível nesta versão.':maintenanceInfo?'Sem configuração informada.':'Consultando a placa…');
+  hint.textContent=selected==='owner'?'A senha do administrador é protegida. Defina uma nova senha nos campos abaixo para trocar o acesso.':
+    ready?(selected==='ap'?'Use os campos abaixo para alterar a rede própria.':'Escolha uma rede para trocar a conexão.'):'Atualize a placa para consultar os dados atuais.';
+}
+function applyMaintenanceCurrent(result){
+  const info={};
+  for(const key of ['adminUsername','apSsid','wifiSsid'])if(typeof result?.[key]==='string')info[key]=result[key];
+  maintenanceInfo=info;
+  renderMaintenanceCurrent();
+}
+async function loadMaintenanceCurrent(){
+  const mac=maintenanceMac,lookup=++maintenanceLookup;
+  if(!remoteNetworkInfoReady(devices.find(device=>device.mac===mac)))return;
+  const current=()=>!maintenancePage.hidden&&maintenanceMac===mac&&maintenanceLookup===lookup;
+  try{
+    const result=await remoteQuery(mac,'wifi-status',{},current);
+    if(current())applyMaintenanceCurrent(result);
+  }catch(error){
+    if(!current()||error===noOperation)return;
+    maintenanceInfo={error:true};renderMaintenanceCurrent();
+  }
+}
+function clearMaintenanceCurrentPassword(){
+  ++maintenancePasswordRevision;
+  $('#maintenance-current-password').textContent='';
+}
+function requestMaintenanceNetworkInfo(mac){
+  let reading=maintenancePasswordReads.get(mac);
+  if(reading)return reading;
+  reading=boundedOperationApi('/api/admin/maintenance/request',{mac,action:'network_credentials',params:{}})
+    .then(ticket=>receiveMaintenance(ticket,90000))
+    .finally(()=>{maintenancePasswordReads.delete(mac);showMaintenanceStatus(mac);});
+  maintenancePasswordReads.set(mac,reading);
+  showMaintenanceStatus(mac);
+  return reading;
+}
+async function loadMaintenanceCurrentPassword(){
+  const mac=maintenanceMac,selected=maintenanceForm.elements.action.value;
+  clearMaintenanceCurrentPassword();
+  if(!mac||maintenancePage.hidden||document.hidden||!['wifi','ap'].includes(selected)||
+     !remoteNetworkInfoReady(devices.find(device=>device.mac===mac)))return;
+  const revision=maintenancePasswordRevision,output=$('#maintenance-current-password');
+  const current=()=>!document.hidden&&!maintenancePage.hidden&&maintenanceMac===mac&&
+    maintenancePasswordRevision===revision&&maintenanceForm.elements.action.value===selected;
+  output.textContent='Consultando a placa…';
+  try{
+    const result=await requestMaintenanceNetworkInfo(mac);
+    if(!current())return;
+    const password=result?.[selected==='ap'?'apPassword':'wifiPassword'];
+    if(typeof password!=='string')throw Error('Senha atual indisponível.');
+    applyMaintenanceCurrent(result);
+    output.textContent=password||'Rede sem senha';
+  }catch(error){if(current())output.textContent=error.message||'Senha atual indisponível.';}
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)clearMaintenanceCurrentPassword();
+  else if(!maintenancePage.hidden)loadMaintenanceCurrentPassword();
+});
+window.addEventListener('pagehide',clearMaintenanceCurrentPassword);
 const maintenanceDetails={
   owner:{name:'Novo usuário do administrador',password:'Nova senha do administrador',hint:'A troca encerra as sessões locais. Entre novamente com o novo usuário e a nova senha.',done:'Administrador atualizado. Entre novamente no painel local.'},
   wifi:{name:'Nome da rede Wi-Fi',password:'Senha da rede Wi-Fi',hint:'A placa precisa estar online para receber a alteração. Para rede aberta, deixe a senha em branco.',done:'A placa confirmou a configuração de Wi-Fi. Se o endereço local mudar, abra o painel pelo novo endereço.'},
@@ -1022,6 +1391,7 @@ async function queryMaintenanceWifi(op){
     if(typeof result?.connected!=='boolean'||typeof result.ssid!=='string'||typeof result.ip!=='string'||
        (op==='wifi-scan'&&!Array.isArray(result.networks)))throw Error('A placa enviou uma resposta de Wi-Fi incompleta.');
     view.current={connected:result.connected,ssid:result.ssid,ip:result.ip};
+    applyMaintenanceCurrent(result);
     if(!result.connected)view.editing=true;
     if(op==='wifi-scan'){
       view.items=result.networks.filter(network=>typeof network?.ssid==='string'&&network.ssid&&typeof network.secured==='boolean'&&Number.isFinite(network.rssi));
@@ -1043,17 +1413,18 @@ function showMaintenanceStatus(mac){
   if(maintenancePage.hidden||mac!==maintenanceMac)return;
   const ready=devices.find(device=>device.mac===mac)?.maintenanceReady===true,job=maintenanceJobs.get(mac);
   const fields=$('#maintenance-fields'),submit=$('#maintenance-save'),message=$('#maintenance-status');
-  renderMaintenanceWifi();
+  renderMaintenanceWifi();renderMaintenanceCurrent();
   fields.hidden=!ready;fields.disabled=!ready||job?.state==='waiting';
-  submit.hidden=!ready||$('#maintenance-inputs').hidden;submit.disabled=fields.disabled||!!maintenanceNetwork?.busy;
+  submit.hidden=!ready||$('#maintenance-inputs').hidden;submit.disabled=fields.disabled||!!maintenanceNetwork?.busy||maintenancePasswordReads.has(mac);
   message.classList.toggle('error',job?.state==='error');
   message.textContent=job?.message||(ready?'Mantenha esta placa ligada e com internet até a confirmação.':'Mantenha a placa ligada e online. A configuração pelo painel está disponível a partir da versão 0.20.0, após a sincronização.');
 }
 function openMaintenance(board,writeRoute=true){
   const hash=maintenanceRoute+encodeURIComponent(board.mac);
   if(writeRoute&&location.hash!==hash)history.pushState({...history.state,parkingMaintenance:true},'',hash);
+  clearMaintenanceCurrentPassword();
   maintenanceMac=board.mac;
-  maintenanceNetwork=null;
+  maintenanceInfo=null;maintenanceNetwork=null;
   maintenanceForm.reset();clearMaintenanceInputs();
   $('#maintenance-for').textContent=`${registeredName(board)} · ${board.mac}`;
   showMaintenanceFields();
@@ -1061,12 +1432,13 @@ function openMaintenance(board,writeRoute=true){
   $('#panel-overview').hidden=true;
   maintenancePage.hidden=false;
   showMaintenanceStatus(board.mac);
+  loadMaintenanceCurrent();
   $('#maintenance-title').focus();
 }
 function closeMaintenance(){
   if(maintenancePage.hidden)return;
   const mac=maintenanceMac;
-  clearMaintenanceInputs();maintenanceMac='';maintenanceNetwork=null;
+  clearMaintenanceInputs();clearMaintenanceCurrentPassword();maintenanceMac='';maintenanceInfo=null;maintenanceNetwork=null;
   maintenancePage.hidden=true;
   $('#panel-overview').hidden=false;
   showArea('licenses');
@@ -1101,7 +1473,8 @@ maintenanceForm.elements.action.onchange=()=>{
     ?{current:null,editing:false,choice:null,busy:'',items:null,message:'',error:false}:null;
   $('#maintenance-wifi-list').replaceChildren();
   if(maintenanceNetwork)queryMaintenanceWifi('wifi-status');
-  else{showMaintenanceStatus(maintenanceMac);maintenanceForm.elements.account.focus();}
+  else{showMaintenanceStatus(maintenanceMac);if(!maintenanceInfo||maintenanceInfo.error)loadMaintenanceCurrent();maintenanceForm.elements.account.focus();}
+  loadMaintenanceCurrentPassword();
 };
 $('#maintenance-password-toggle').onclick=()=>maintenancePasswordVisible(maintenanceForm.elements.password.type==='password');
 $('#maintenance-wifi-change').onclick=()=>{
@@ -1110,7 +1483,7 @@ $('#maintenance-wifi-change').onclick=()=>{
   showMaintenanceStatus(maintenanceMac);
   $('#maintenance-wifi-scan').focus();
 };
-$('#maintenance-wifi-refresh').onclick=()=>queryMaintenanceWifi('wifi-status');
+$('#maintenance-wifi-refresh').onclick=()=>{queryMaintenanceWifi('wifi-status');loadMaintenanceCurrentPassword();};
 $('#maintenance-wifi-scan').onclick=()=>queryMaintenanceWifi('wifi-scan');
 $('#maintenance-wifi-manual').onclick=()=>chooseMaintenanceWifi({manual:true});
 function maintenanceParams(action,account,password){
@@ -1126,16 +1499,16 @@ function maintenanceParams(action,account,password){
     throw Error('Informe um nome de rede de até 32 bytes e uma senha de 8 a 63 bytes. A senha pode ficar em branco no Wi-Fi do estabelecimento se a rede for aberta.');
   return {ssid:account,password};
 }
-async function receiveMaintenance(ticket){
+async function receiveMaintenance(ticket,timeout=610000){
   if(ticket?.state!=='waiting'||!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(ticket.id||''))
     throw Error('O servidor ainda não confirmou a solicitação. Confira a placa antes de reenviar.');
-  const deadline=performance.now()+610000;
+  const deadline=performance.now()+timeout;
   do{
     await wait(2000);
     let result;
     try{result=await boundedOperationApi('/api/admin/maintenance/result?id='+encodeURIComponent(ticket.id));}
     catch(error){if(error.status===401||error.status===403)throw error;continue;}
-    if(result.state==='done')return;
+    if(result.state==='done')return result.result;
     if(result.state==='error')throw Error(result.error||'A placa informou que a alteração falhou.');
   }while(performance.now()<deadline);
   throw Error('O tempo de confirmação terminou. Confira o estado da placa antes de reenviar.');
@@ -1143,7 +1516,7 @@ async function receiveMaintenance(ticket){
 maintenanceForm.onsubmit=async event=>{
   event.preventDefault();
   const mac=maintenanceMac,board=devices.find(device=>device.mac===mac);
-  if(board?.maintenanceReady!==true||maintenanceJobs.get(mac)?.state==='waiting')return;
+  if(board?.maintenanceReady!==true||maintenanceJobs.get(mac)?.state==='waiting'||maintenancePasswordReads.has(mac))return;
   const {action,account,password}=maintenanceForm.elements,selected=action.value;
   if(!Object.hasOwn(maintenanceDetails,selected))return;
   if(maintenanceNetwork&&(!maintenanceNetwork.choice||maintenanceNetwork.busy))return;
@@ -1164,6 +1537,10 @@ maintenanceForm.onsubmit=async event=>{
     job.message=error.name==='AbortError'||error instanceof TypeError?'O envio não foi confirmado. Confira a placa antes de reenviar.':error.message;
   }
   showMaintenanceStatus(mac);
+  if(job.state==='done'&&!maintenancePage.hidden&&maintenanceMac===mac){
+    if(selected!=='wifi')loadMaintenanceCurrent();
+    loadMaintenanceCurrentPassword();
+  }
   if(job.state==='done'&&selected==='wifi'&&!maintenancePage.hidden&&maintenanceMac===mac&&maintenanceNetwork){
     Object.assign(maintenanceNetwork,{current:null,editing:false,choice:null,items:null});
     renderMaintenanceNetworks(maintenanceNetwork);
@@ -1777,6 +2154,7 @@ const wait=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds));
 const noOperation=Symbol('cancelled operation');
 const methodNames={cash:'Dinheiro',pix:'Pix',card:'Cartão',pending:'Pendente',monthly:'Incluído na mensalidade'};
 const modeNames={fraction:'Fração',daily:'Diária',overnight:'Pernoite',monthly:'Mensalista'};
+const refundMethodNames={cash:'Dinheiro',pix:'Pix',credit:'Cartão de crédito',debit:'Cartão de débito'};
 const planStatuses={active:'Em dia','due-soon':'A vencer',overdue:'Vencido',inactive:'Inativo'};
 const remoteUnavailable='A placa não respondeu. Confira se está ligada e conectada à internet.';
 const brl=cents=>paymentMoney.format((Number.isFinite(cents)?cents:0)/100);
@@ -1958,19 +2336,37 @@ function elapsed(start,end){
   const n=end-start;
   return [Math.floor(n/3600),Math.floor(n%3600/60),n%60].map(value=>String(value).padStart(2,'0')).join(':');
 }
+function visitExit(v){
+  if(!v.cancelledAt)return v.out?esc(orderDate(v.out)):'Em andamento';
+  return `Cancelado em ${esc(orderDate(v.cancelledAt))}`;
+}
+function visitRefund(v){
+  if(!v.cancelledAt)return '';
+  if(!v.refundedAt)return '<small>Sem estorno</small>';
+  return `<small>Estorno ${brl(v.refundAmount)} · ${labelOf(refundMethodNames,v.refundMethod)} · ${esc(orderDate(v.refundedAt))}</small>`;
+}
+function visitCorrections(visit){
+  const conversion=visit.billingConversion;
+  const payments=Array.isArray(visit.paymentCorrections)?visit.paymentCorrections:[];
+  if(!conversion?.at&&!payments.length)return '';
+  const operator=record=>[record.by&&`Operador ${record.by}`,record.reason].filter(Boolean).join(' · ');
+  const conversionAudit=conversion?.at?`<div><strong>Conversão para fração</strong><small>${esc(labelOf(modeNames,conversion.from,'Valor fixo'))} · ${esc(orderDate(conversion.at))}</small>${operator(conversion)?`<small>${esc(operator(conversion))}</small>`:''}${conversion.refundedAt?`<small>Estorno ${brl(conversion.refundAmount)} · ${labelOf(refundMethodNames,conversion.refundMethod)} · ${esc(orderDate(conversion.refundedAt))}</small>`:''}</div>`:'';
+  const paymentAudit=payments.map(item=>`<div><strong>Correção de pagamento</strong><small>${esc(labelOf(methodNames,item.from))} → ${esc(labelOf(methodNames,item.to))} · ${esc(orderDate(item.at))}</small>${operator(item)?`<small>${esc(operator(item))}</small>`:''}</div>`).join('');
+  return `<details><summary>Histórico de alterações</summary>${conversionAudit}${paymentAudit}</details>`;
+}
 function visitRow(v){
   const covered=v.modality==='monthly'||v.billing==='monthly';
   const method=labelOf(methodNames,v.payment),billing=labelOf(modeNames,v.modality,v.stayLabel||'Sem modalidade identificada');
   const rate=visitTariff(v),duration=elapsed(v.in,v.out);
   return `<tr><td data-label="Veículo"><div><strong>${esc(v.plate)}</strong><small>${esc([v.type,v.model].filter(Boolean).join(' · '))}</small><small>${esc(v.name)}</small></div></td>
     <td data-label="Entrada"><div><strong>${esc(orderDate(v.in))}</strong><small>${v.shift?`Horário ${countValue(v.shift)}`:''}</small></div></td>
-    <td data-label="Saída"><div><strong>${v.out?esc(orderDate(v.out)):'Em andamento'}</strong>${duration?`<small>${duration}</small>`:''}${!v.out&&v.due?`<small>Retirada até ${esc(orderDate(v.due))}</small>`:''}</div></td>
+    <td data-label="Saída"><div><strong>${visitExit(v)}</strong>${duration?`<small>Permanência ${duration}</small>`:''}${!v.out&&!v.cancelledAt&&v.due?`<small>Retirada até ${esc(orderDate(v.due))}</small>`:''}${v.cancelReason?`<small>${esc(v.cancelReason)}</small>`:''}${v.cancelledBy?`<small>Operador ${esc(v.cancelledBy)}</small>`:''}</div></td>
     <td data-label="Modalidade"><div><strong>${esc(billing)}</strong>${rate?`<small>${esc(rate)}</small>`:''}</div></td>
-    <td data-label="Pagamento" class="num"><div><strong>${covered?'Incluído':brl(v.price)}</strong><small>${method}</small>${v.paidAt?`<small>${esc(orderDate(v.paidAt))}</small>`:''}</div></td>
+    <td data-label="Pagamento" class="num"><div><strong>${v.cancelledAt&&!v.refundedAt?'Sem cobrança':covered?'Incluído':brl(v.price)}</strong>${!v.cancelledAt||v.refundedAt?`<small>${method}</small>`:''}${v.paidAt?`<small>${esc(orderDate(v.paidAt))}</small>`:''}${visitRefund(v)}${visitCorrections(v)}</div></td>
     <td data-label="Comprovantes">${receiptActions(v)}</td></tr>`;
 }
 function visitStats(stats){
-  return reportCards([['Atendimentos',countValue(stats.entries)],['Encerrados',countValue(stats.exits)],['Recebido por estadia',brl(stats.paid)],['A receber',brl(stats.pending)],['Valor total',brl(stats.amount)]]);
+  return reportCards([['Atendimentos',countValue(stats.entries)],['Encerrados',countValue(stats.exits)],['Recebido por estadia',brl(stats.paid)],['A receber',brl(stats.pending)],['Valor total',brl(stats.amount)],...(Number.isSafeInteger(stats.cancelled)?[['Cancelados',stats.cancelled]]:[])]);
 }
 function visitBreakdown(breakdown){
   if(!breakdown)return '';
@@ -2008,20 +2404,28 @@ async function allPages(op,params,context,caption,defaultPageSize){
     context.progress(`${caption} · ${entries.length} de ${expected}.`);
   }
 }
+function renderPlatePassage(visit){
+  const mode=labelOf(modeNames,visit.modality,visit.stayLabel||'Não identificada');
+  return `<div><strong>${esc(mode)}</strong><small>Entrada ${esc(orderDate(visit.in))}</small><small>${visit.cancelledAt?'':'Saída '}${visitExit(visit)}</small>${visitRefund(visit)}</div>`;
+}
 function renderPlateGroups(items){
   const groups=new Map();
   for(const item of items){
-    const plate=item.type==='Guarda-volumes'?'Guarda-volumes':item.plate,mode=item.modality||item.billing;
-    const key=JSON.stringify([plate,mode]);
-    if(!groups.has(key))groups.set(key,{plate,mode,count:0,paid:0,pending:0});
-    const current=groups.get(key);current.count++;
-    if(item.payment==='pending')current.pending+=item.price;else current.paid+=item.price;
+    const plate=item.type==='Guarda-volumes'?'Guarda-volumes':item.plate;
+    if(!groups.has(plate))groups.set(plate,{plate,visits:[],total:0,count:0});
+    const group=groups.get(plate);
+    group.visits.push(item);
+    if(!item.cancelledAt){group.total+=item.price;group.count++;}
   }
-  const ordered=[...groups.values()].sort((a,b)=>a.plate.localeCompare(b.plate)||String(a.mode).localeCompare(String(b.mode)));
-  if(!ordered.length)return '<p class="empty">Nenhuma placa com estes filtros.</p>';
-  return overviewTable([['Placa'],['Modalidade'],['Atendimentos',true],['Recebido',true],['A receber',true]],ordered.map(group=>`<tr>
-    <td data-label="Placa"><strong>${esc(group.plate)}</strong></td><td data-label="Modalidade">${labelOf(modeNames,group.mode,'Não identificada')}</td>
-    <td data-label="Atendimentos" class="num">${group.count}</td><td data-label="Recebido" class="num">${brl(group.paid)}</td><td data-label="A receber" class="num">${brl(group.pending)}</td></tr>`).join(''));
+  const list=[...groups.values()].sort((a,b)=>b.total-a.total||a.plate.localeCompare(b.plate));
+  if(!list.length)return '<p class="empty">Nenhuma placa com estes filtros.</p>';
+  const rows=list.map(group=>{
+    group.visits.sort((a,b)=>b.in-a.in||b.id-a.id);
+    const [latest,...older]=group.visits;
+    return `<tr><td data-label="Placa"><strong>${esc(group.plate)}</strong></td><td data-label="Passagens">${renderPlatePassage(latest)}${older.length?`<details><summary>Ver mais ${older.length} ${older.length===1?'passagem':'passagens'}</summary>${older.map(renderPlatePassage).join('')}</details>`:''}</td>
+      <td data-label="Vezes" class="num">${group.count}</td><td data-label="Valor" class="num">${brl(group.total)}</td></tr>`;
+  }).join('');
+  return overviewTable([['Placa'],['Passagens'],['Vezes',true],['Valor',true]],rows)+reportCards([['Valor total',brl(list.reduce((sum,group)=>sum+group.total,0))]]);
 }
 const addValues=(a,b)=>a+(Number.isFinite(b)?b:0);
 const centsSum=value=>Array.isArray(value)?value.reduce(addValues,0):0;
@@ -2040,12 +2444,22 @@ function groupDates(rows,yearView,columns){
   return [...periods.values()];
 }
 const displayPeriod=(date,yearView)=>yearView?`${date.slice(5,7)}/${date.slice(0,4)}`:brDay(date);
-function renderDailySummary(daily,yearView){
+function summaryDimensions(periods){
+  const tables=[
+    ['Por tipo',['Carros e utilitários','Motos','Guarda-volumes'],(period,index)=>[period.n?.[index],period.paid?.[index],period.pend?.[index]]],
+    ['Por horário',['Horário 1','Horário 2'],(period,index)=>period.s?.[index]],
+  ];
+  return tables.map(([title,labels,amounts])=>`<h3>${title}</h3>`+overviewTable([['Grupo'],['Atendimentos',true],['Recebido',true],['A receber',true]],labels.map((label,index)=>{
+    const [count,paid,pending]=periods.reduce((total,period)=>{const values=amounts(period,index);return total.map((value,key)=>addValues(value,values?.[key]));},[0,0,0]);
+    return `<tr><td data-label="Grupo"><strong>${label}</strong></td><td data-label="Atendimentos" class="num">${count}</td><td data-label="Recebido" class="num">${brl(paid)}</td><td data-label="A receber" class="num">${brl(pending)}</td></tr>`;
+  }).join(''))).join('');
+}
+function renderDailySummary(daily,yearView,periods){
   const total=daily.reduce((a,b)=>({entries:a.entries+b.entries,exits:a.exits+b.exits,paid:a.paid+b.paid,pending:a.pending+b.pending}),{entries:0,exits:0,paid:0,pending:0});
   const cards=visitStats({...total,amount:total.paid+total.pending});
   if(!daily.length)return cards+'<p class="empty">Sem movimentação no período.</p>';
   const rows=groupDates(daily,yearView,['entries','exits','paid','pending']);
-  return cards+overviewTable([[yearView?'Mês':'Dia'],['Atendimentos',true],['Encerrados',true],['Recebido por estadia',true],['A receber',true]],rows.map(row=>`<tr>
+  return cards+summaryDimensions(periods)+overviewTable([[yearView?'Mês':'Dia'],['Atendimentos',true],['Encerrados',true],['Recebido por estadia',true],['A receber',true]],rows.map(row=>`<tr>
     <td data-label="Período"><strong>${displayPeriod(row.day,yearView)}</strong></td><td data-label="Atendimentos" class="num">${row.entries}</td>
     <td data-label="Encerrados" class="num">${row.exits}</td><td data-label="Recebido por estadia" class="num">${brl(row.paid)}</td><td data-label="A receber" class="num">${brl(row.pending)}</td></tr>`).join(''));
 }
@@ -2054,15 +2468,20 @@ const moneyCards=(totals,last='Recebido no período')=>reportCards([...paymentMe
 function sumMethods(group){
   return group.reduce((a,b)=>{for(const key of [...paymentMethods,'total'])a[key]=addValues(a[key],b?.[key]);return a;},{cash:0,pix:0,card:0,total:0});
 }
+function cashRefundMetrics(refunds,net){
+  return refunds&&net?reportCards([['Estornos',brl(refunds.total)],['Saldo líquido',brl(net.total)]]):'';
+}
 function renderPeriodCash(chunks,yearView){
   const received=sumMethods(chunks.map(chunk=>chunk.received));
   const parking=sumMethods(chunks.map(chunk=>chunk.parking)),monthly=sumMethods(chunks.map(chunk=>chunk.monthly));
-  const daily=chunks.flatMap(chunk=>chunk.days||[]).map(row=>({day:row.day,closed:row.closed,opened:row.opened,...row.received}));
-  const days=groupDates(daily,yearView,[...paymentMethods,'total']);
-  const table=days.length?overviewTable([[yearView?'Mês':'Dia'],['Dinheiro',true],['Pix',true],['Cartão',true],['Total',true]],days.map(row=>`<tr>
+  const hasRefunds=chunks.some(chunk=>chunk.refunds&&chunk.net);
+  const refunds=hasRefunds?sumMethods(chunks.map(chunk=>chunk.refunds)):null,net=hasRefunds?sumMethods(chunks.map(chunk=>chunk.net)):null;
+  const daily=chunks.flatMap(chunk=>chunk.days||[]).map(row=>({day:row.day,closed:row.closed,opened:row.opened,...row.received,refund:row.refunds?.total??0,net:row.net?.total??row.received?.total}));
+  const days=groupDates(daily,yearView,[...paymentMethods,'total','refund','net']);
+  const table=days.length?overviewTable([[yearView?'Mês':'Dia'],['Dinheiro',true],['Pix',true],['Cartão',true],['Recebido',true],...(hasRefunds?[['Estornos',true],['Saldo líquido',true]]:[])],days.map(row=>`<tr>
     <td data-label="Período"><div><button type="button" data-open-cash-date="${esc(row.day)}" data-open-cash-period="${yearView?'month':'day'}">${displayPeriod(row.day,yearView)}</button>${yearView?'':`<small>${row.closed?'Fechado':row.opened?'Aberto':'Sem abertura'}</small>`}</div></td>
-    ${paymentMethods.map(method=>`<td data-label="${methodNames[method]}" class="num">${brl(row[method])}</td>`).join('')}<td data-label="Total" class="num">${brl(row.total)}</td></tr>`).join('')):'<p class="empty">Sem recebimentos no período.</p>';
-  return moneyCards(received)+`<p class="hint">Estadias ${brl(parking.total)} · Mensalidades ${brl(monthly.total)}. Valores pela data do pagamento.</p>`+table;
+    ${paymentMethods.map(method=>`<td data-label="${methodNames[method]}" class="num">${brl(row[method])}</td>`).join('')}<td data-label="Recebido" class="num">${brl(row.total)}</td>${hasRefunds?`<td data-label="Estornos" class="num">${brl(row.refund)}</td><td data-label="Saldo líquido" class="num">${brl(row.net)}</td>`:''}</tr>`).join('')):'<p class="empty">Sem movimentação no período.</p>';
+  return moneyCards(received)+cashRefundMetrics(refunds,net)+`<p class="hint">Estadias ${brl(parking.total)} · Mensalidades ${brl(monthly.total)}. Valores pela data do pagamento.</p>`+table;
 }
 function renderCashDay(data){
   const{received,parking,monthly,opening,deposits,withdrawals,closing}=data;
@@ -2073,15 +2492,19 @@ function renderCashDay(data){
     <td data-label="Placa e cliente"><div><strong>${esc(item.plate)}</strong><small>${esc(item.name)}</small></div></td><td data-label="Recebido em">${esc(orderDate(item.paidAt))}</td>
     <td data-label="Origem">${item.monthly?'Mensalidade':'Estadia'}</td><td data-label="Pagamento">${labelOf(methodNames,item.payment)}</td><td data-label="Valor" class="num">${brl(item.amount)}</td></tr>`).join('')):
     '<p class="empty">Nenhum pagamento registrado para esta data.</p>';
-  return moneyCards(received,'Recebido no dia')+`<p class="hint">Estadias ${brl(parking.total)} · Mensalidades ${brl(monthly.total)}</p>
-    <p class="hint">${data.closed?'Caixa fechado':data.opened?'Caixa aberto':'Caixa sem abertura'} · Fundo inicial ${brl(opening)} · Suprimentos ${brl(deposits)} · Sangrias ${brl(withdrawals)}</p>`+conference+rows;
+  const refunds=data.refundItems?.length?'<h3>Estornos registrados</h3>'+overviewTable([['Placa e cliente'],['Estornado em'],['Origem'],['Forma do estorno'],['Valor',true]],data.refundItems.map(item=>`<tr>
+    <td data-label="Placa e cliente"><div><strong>${esc(item.plate)}</strong><small>${esc(item.name)}</small></div></td><td data-label="Estornado em">${esc(orderDate(item.refundedAt))}</td>
+    <td data-label="Origem">${item.monthly?'Mensalidade':item.type==='Guarda-volumes'?'Guarda-volumes':'Estadia'}</td>
+    <td data-label="Forma do estorno"><div>${labelOf(refundMethodNames,item.refundMethod)}${item.refundedBy||item.cancelledBy?`<small>Operador ${esc(item.refundedBy||item.cancelledBy)}</small>`:''}${item.refundReason||item.cancelReason?`<small>${esc(item.refundReason||item.cancelReason)}</small>`:''}</div></td><td data-label="Valor" class="num">${brl(item.refundAmount)}</td></tr>`).join('')):'';
+  return moneyCards(received,'Recebido no dia')+cashRefundMetrics(data.refunds,data.net)+`<p class="hint">Estadias ${brl(parking.total)} · Mensalidades ${brl(monthly.total)}</p>
+    <p class="hint">${data.closed?'Caixa fechado':data.opened?'Caixa aberto':'Caixa sem abertura'} · Fundo inicial ${brl(opening)} · Suprimentos ${brl(deposits)} · Sangrias ${brl(withdrawals)}</p>`+conference+rows+refunds;
 }
 function renderInstallments(data){
   const rows=data.items.length?overviewTable([['Placa e mensalista'],['Recebido em'],['Pagamento'],['Vencimento renovado'],['Valor',true]],data.items.map(row=>`<tr>
     <td data-label="Placa e mensalista"><div><strong>${esc(row.plate)}</strong><small>${esc(row.name)}</small></div></td><td data-label="Recebido em">${esc(orderDate(row.paidAt))}</td>
-    <td data-label="Pagamento">${labelOf(methodNames,row.payment)}</td><td data-label="Vencimento renovado"><div><strong>${brDay(row.toDue)}</strong><small>Anterior ${brDay(row.fromDue)}</small></div></td>
-    <td data-label="Valor" class="num">${brl(row.amount)}</td></tr>`).join('')):'<p class="empty">Nenhuma mensalidade recebida no período.</p>';
-  return reportCards([['Mensalidades recebidas',countValue(data.total)],['Valor recebido',brl(data.amount)]])+rows;
+    <td data-label="Pagamento">${labelOf(methodNames,row.payment)}</td><td data-label="Vencimento renovado"><div><strong>${brDay(row.toDue)}</strong><small>Anterior ${brDay(row.fromDue)}</small>${row.dueRestored&&row.dueAfterRefund?`<small>Restaurado para ${brDay(row.dueAfterRefund)}</small>`:''}</div></td>
+    <td data-label="Valor" class="num"><div><strong>${brl(row.amount)}</strong>${row.refundedAt?`<small>Estorno ${brl(row.refundAmount)} · ${labelOf(refundMethodNames,row.refundMethod)}</small><small>${esc(orderDate(row.refundedAt))}</small>${row.refundedBy?`<small>Operador ${esc(row.refundedBy)}</small>`:''}${row.refundReason?`<small>${esc(row.refundReason)}</small>`:''}`:''}</div></td></tr>`).join('')):'<p class="empty">Nenhuma mensalidade recebida no período.</p>';
+  return reportCards([['Mensalidades recebidas',countValue(data.total)],['Valor recebido',brl(data.amount)],...(Number.isSafeInteger(data.refunded)?[['Estornos',brl(data.refunded)],['Saldo líquido',brl(data.net)]]:[])])+rows;
 }
 
 function showFilterFields(){
@@ -2117,10 +2540,10 @@ async function loadMotion(page=0){
     }else if(mode==='summary'){
       const data=await request('summary',{...range,...(year?{group:'month'}:{})});
       const daily=year?data.months.map(row=>({...row,day:row.month+'-01'})):data.days;
-      markup=renderDailySummary(makeDailySummary(daily),year);
+      markup=renderDailySummary(makeDailySummary(daily),year,daily);
     }else if(mode==='cash'&&from===to){
       const data=await request('cash-day',{day:from,page});
-      markup=renderCashDay(data);pagination=[data.receiptTotal,12];
+      markup=renderCashDay(data);pagination=[Math.max(data.receiptTotal,data.refundTotal||0),12];
     }else if(mode==='cash'){
       const data=await request('cash',{...range,...(year?{group:'month'}:{})});
       const days=year?data.months.map(row=>({...row,day:row.month+'-01'})):data.days;
@@ -2167,10 +2590,12 @@ function renderPeople(items,scope){
     <td data-label="Cliente"><strong>${esc(row.name||'Sem nome')}</strong></td>
     <td data-label="Placa e veículo"><div><strong>${esc(row.plate)}</strong><small>${esc([row.type,row.model].filter(Boolean).join(' · '))}</small>${Array.isArray(row.alternatePlates)&&row.alternatePlates.length?`<small>Outras placas ${esc(row.alternatePlates.join(', '))}</small>`:''}</div></td>
     <td data-label="Situação">${labelOf(planStatuses,row.status)}</td><td data-label="Vencimento">${brDay(row.due)}</td><td class="num" data-label="Mensalidade">${brl(row.amount)}</td></tr>`).join(''));
-  return overviewTable([['Cliente'],['Placa e veículo'],['Cadastro'],['Total de passagens',true],['Modalidades']],items.map(row=>`<tr>
-    <td data-label="Cliente"><strong>${esc(row.name||'Sem nome')}</strong></td><td data-label="Placa e veículo"><div><strong>${esc(row.plate)}</strong><small>${esc([row.type,row.model].filter(Boolean).join(' · '))}</small></div></td>
-    <td data-label="Cadastro">${customerStatus(row)}</td><td data-label="Total de passagens" class="num">${countValue(row.visits)}</td>
-    <td data-label="Modalidades"><div>${row.billingCounts?`<small>${['fraction','daily','overnight'].map(key=>`${modeNames[key]} ${countValue(row.billingCounts[key])}`).join(' · ')}</small>`:''}
+  return overviewTable([['Placa'],['Cliente'],['Telefone'],['Tipo'],['Plano'],['Atendimentos']],items.map(row=>`<tr>
+    <td data-label="Placa"><strong>${esc(row.plate)}</strong></td>
+    <td data-label="Cliente"><div><strong>${esc(row.name||'Sem nome')}</strong><small>${esc(row.model)}</small></div></td>
+    <td data-label="Telefone">${esc(row.phone)||'—'}</td><td data-label="Tipo">${esc(row.type)||'—'}</td>
+    <td data-label="Plano">${customerStatus(row)}</td>
+    <td data-label="Atendimentos"><div><strong>Total ${countValue(row.visits)}</strong>${row.billingCounts?`<small>${['fraction','daily','overnight'].map(key=>`${modeNames[key]} ${countValue(row.billingCounts[key])}`).join(' · ')}</small>`:''}
     ${row.monthlyVisits?`<small>${countValue(row.monthlyVisits)} pela mensalidade</small>`:''}${row.unclassifiedVisits?`<small>${countValue(row.unclassifiedVisits)} sem modalidade identificada</small>`:''}</div></td></tr>`).join(''));
 }
 async function loadPeople(page=0){
@@ -2201,8 +2626,8 @@ $('#people-export').onclick=async()=>{
   try{
     const items=await allPages('customers',{search:''},context,'Preparando o CSV',12);
     if(!context.current())return;
-    const columns=['Cliente','Placa','Tipo','Marca e modelo','Cadastro','Passagens','Fração','Diária','Pernoite','Pela mensalidade','Sem modalidade identificada'];
-    const rows=items.map(row=>[row.name,row.plate,row.type,row.model,customerStatus(row),row.visits,row.billingCounts?.fraction,row.billingCounts?.daily,row.billingCounts?.overnight,row.monthlyVisits,row.unclassifiedVisits]);
+    const columns=['Placa','Cliente','Telefone','Tipo','Marca e modelo','Plano','Atendimentos','Fração','Diária','Pernoite','Pela mensalidade','Sem modalidade identificada'];
+    const rows=items.map(row=>[row.plate,row.name,row.phone,row.type,row.model,customerStatus(row),row.visits,row.billingCounts?.fraction,row.billingCounts?.daily,row.billingCounts?.overnight,row.monthlyVisits,row.unclassifiedVisits]);
     downloadClientsCsv(`cadastros-${context.mac.replace(/:/g,'')}.csv`,columns,rows);
     operationMessage('people',`${items.length} ${items.length===1?'cadastro exportado':'cadastros exportados'}.`);
   }catch(error){
@@ -2338,6 +2763,7 @@ function accessMessage(id,text){
   node.textContent=text;node.hidden=!text;
 }
 function endAccess(message){
+  clearMaintenanceCurrentPassword();
   const wasOpen=!$('#app').hidden;
   token='';store.clear();
   accessLogin.elements.token.value='';
