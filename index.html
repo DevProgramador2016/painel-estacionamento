@@ -785,8 +785,10 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
   .tabs button{font-size:13px;padding-inline:3px}
 }
 #maintenance-current-password-row { display:grid; gap:4px; }
-#maintenance-current-password { max-width:100%; font-family:ui-monospace,monospace; overflow-wrap:anywhere; }
+#maintenance-current-password, #maintenance-current-owner-password { max-width:100%; font-family:ui-monospace,monospace; overflow-wrap:anywhere; }
 #maintenance-current-name { overflow-wrap:anywhere; }
+#maintenance-owner-password { display:grid; justify-items:start; gap:6px; min-width:0; width:100%; }
+#maintenance-owner-password-result { display:grid; gap:4px; min-width:0; width:100%; }
 .operation-result details > div + div { margin-top:8px; }
 </style>
 </head>
@@ -940,6 +942,14 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
         <div id="maintenance-current-password-row" hidden>
           <label for="maintenance-current-password">Senha atual da rede</label>
           <output id="maintenance-current-password" aria-live="off"></output>
+        </div>
+        <div id="maintenance-owner-password" hidden>
+          <button type="button" id="maintenance-owner-password-toggle" aria-controls="maintenance-owner-password-result" aria-expanded="false">Mostrar senha atual</button>
+          <p id="maintenance-owner-password-feedback" class="hint" role="status" hidden></p>
+          <div id="maintenance-owner-password-result" hidden>
+            <label for="maintenance-current-owner-password">Senha atual do administrador</label>
+            <output id="maintenance-current-owner-password" aria-live="off"></output>
+          </div>
         </div>
         <small id="maintenance-current-hint" class="hint"></small>
       </section>
@@ -1217,8 +1227,25 @@ let maintenanceMac='';
 let maintenanceNetwork=null;
 let maintenanceInfo=null,maintenanceLookup=0,maintenancePasswordRevision=0;
 const maintenancePasswordReads=new Map();
+let maintenanceOwnerReading=false,maintenanceOwnerTimer;
 function remoteNetworkInfoReady(board){
   return board?.maintenanceReady===true&&firmwareVersionCode(board.version)>=firmwareVersionCode('0.22.0');
+}
+function ownerPasswordReady(board){
+  return board?.maintenanceReady===true&&firmwareVersionCode(board.version)>=firmwareVersionCode('0.22.6');
+}
+function renderMaintenanceOwnerPassword(selected,board){
+  const controls=$('#maintenance-owner-password'),toggle=$('#maintenance-owner-password-toggle');
+  const available=selected==='owner'&&ownerPasswordReady(board)&&isAccessSession(token);
+  if(!available&&(maintenanceOwnerReading||!$('#maintenance-owner-password-result').hidden)){
+    ++maintenancePasswordRevision;
+    resetMaintenanceOwnerPassword();
+  }
+  const showing=!$('#maintenance-owner-password-result').hidden;
+  controls.hidden=!available;
+  toggle.disabled=maintenanceOwnerReading||maintenanceJobs.get(maintenanceMac)?.state==='waiting';
+  toggle.textContent=showing?'Ocultar senha atual':'Mostrar senha atual';
+  toggle.setAttribute('aria-expanded',String(showing));
 }
 function renderMaintenanceCurrent(){
   const selected=maintenanceForm.elements.action.value,board=devices.find(device=>device.mac===maintenanceMac);
@@ -1227,8 +1254,10 @@ function renderMaintenanceCurrent(){
   $('#maintenance-current-title').textContent=selected==='owner'?'Usuário atual':selected==='ap'?'Rede própria atual':'Rede Wi-Fi configurada';
   $('#maintenance-current-password-row').hidden=selected==='owner'||!ready;
   name.textContent=stored||(maintenanceInfo?.error?'Configuração atual indisponível.':!ready?'Indisponível nesta versão.':maintenanceInfo?'Sem configuração informada.':'Consultando a placa…');
-  hint.textContent=selected==='owner'?'A senha do administrador é protegida. Defina uma nova senha nos campos abaixo para trocar o acesso.':
+  hint.textContent=selected==='owner'?(!ownerPasswordReady(board)?'Atualize a placa para consultar a senha do administrador.':
+    isAccessSession(token)?'A senha é consultada somente quando você solicita nesta tela.':'Entre novamente no painel para consultar a senha do administrador.'):
     ready?(selected==='ap'?'Use os campos abaixo para alterar a rede própria.':'Escolha uma rede para trocar a conexão.'):'Atualize a placa para consultar os dados atuais.';
+  renderMaintenanceOwnerPassword(selected,board);
 }
 function applyMaintenanceCurrent(result){
   const info={};
@@ -1251,6 +1280,65 @@ async function loadMaintenanceCurrent(){
 function clearMaintenanceCurrentPassword(){
   ++maintenancePasswordRevision;
   $('#maintenance-current-password').textContent='';
+  resetMaintenanceOwnerPassword();
+  showMaintenanceStatus(maintenanceMac);
+}
+function resetMaintenanceOwnerPassword(){
+  clearTimeout(maintenanceOwnerTimer);
+  maintenanceOwnerReading=false;
+  $('#maintenance-current-owner-password').textContent='';
+  $('#maintenance-owner-password-result').hidden=true;
+  ownerPasswordFeedback('');
+}
+function ownerPasswordFeedback(message){
+  const feedback=$('#maintenance-owner-password-feedback');
+  feedback.textContent=message;
+  feedback.hidden=!message;
+}
+async function revealMaintenanceOwnerPassword(){
+  if(!$('#maintenance-owner-password-result').hidden){
+    clearMaintenanceCurrentPassword();
+    return;
+  }
+  const mac=maintenanceMac,session=token,origin=server,board=devices.find(device=>device.mac===mac);
+  if(activeArea!=='licenses'||maintenancePage.hidden||document.hidden||
+     maintenanceForm.elements.action.value!=='owner'||!isAccessSession(session)||!ownerPasswordReady(board)||
+     maintenanceOwnerReading||maintenanceJobs.get(mac)?.state==='waiting')return;
+  clearMaintenanceCurrentPassword();
+  maintenanceOwnerReading=true;
+  const revision=maintenancePasswordRevision;
+  const current=()=>token===session&&server===origin&&activeArea==='licenses'&&!maintenancePage.hidden&&!document.hidden&&
+    maintenanceMac===mac&&maintenancePasswordRevision===revision&&maintenanceForm.elements.action.value==='owner'&&
+    ownerPasswordReady(devices.find(device=>device.mac===mac));
+  ownerPasswordFeedback('Consultando a placa…');
+  showMaintenanceStatus(mac);
+  try{
+    const ticket=await boundedOperationApi('/api/admin/maintenance/request',{mac,action:'owner_credentials',params:{}});
+    if(!current())return;
+    const result=await receiveMaintenance(ticket,65000,current);
+    if(!current())return;
+    if(typeof result?.adminUsername!=='string'||typeof result.adminPassword!=='string')
+      throw Error('A placa enviou uma resposta incompleta.');
+    ++maintenanceLookup;
+    maintenanceInfo={...maintenanceInfo,error:false,adminUsername:result.adminUsername};
+    if(!result.adminPassword){
+      ownerPasswordFeedback(result.adminUsername?
+        'Entre uma vez com usuário e senha do administrador no painel local da placa ou defina uma nova senha abaixo.':
+        'A placa ainda não tem administrador cadastrado. Defina o usuário e a senha abaixo.');
+      return;
+    }
+    $('#maintenance-current-owner-password').textContent=result.adminPassword;
+    $('#maintenance-owner-password-result').hidden=false;
+    ownerPasswordFeedback('');
+    maintenanceOwnerTimer=setTimeout(clearMaintenanceCurrentPassword,25000);
+  }catch(error){
+    if(current())ownerPasswordFeedback(error.message||'Senha atual indisponível.');
+  }finally{
+    if(maintenancePasswordRevision===revision){
+      maintenanceOwnerReading=false;
+      showMaintenanceStatus(mac);
+    }
+  }
 }
 function requestMaintenanceNetworkInfo(mac){
   let reading=maintenancePasswordReads.get(mac);
@@ -1415,7 +1503,7 @@ function showMaintenanceStatus(mac){
   const fields=$('#maintenance-fields'),submit=$('#maintenance-save'),message=$('#maintenance-status');
   renderMaintenanceWifi();renderMaintenanceCurrent();
   fields.hidden=!ready;fields.disabled=!ready||job?.state==='waiting';
-  submit.hidden=!ready||$('#maintenance-inputs').hidden;submit.disabled=fields.disabled||!!maintenanceNetwork?.busy||maintenancePasswordReads.has(mac);
+  submit.hidden=!ready||$('#maintenance-inputs').hidden;submit.disabled=fields.disabled||!!maintenanceNetwork?.busy||maintenancePasswordReads.has(mac)||maintenanceOwnerReading;
   message.classList.toggle('error',job?.state==='error');
   message.textContent=job?.message||(ready?'Mantenha esta placa ligada e com internet até a confirmação.':'Mantenha a placa ligada e online. A configuração pelo painel está disponível a partir da versão 0.20.0, após a sincronização.');
 }
@@ -1477,6 +1565,7 @@ maintenanceForm.elements.action.onchange=()=>{
   loadMaintenanceCurrentPassword();
 };
 $('#maintenance-password-toggle').onclick=()=>maintenancePasswordVisible(maintenanceForm.elements.password.type==='password');
+$('#maintenance-owner-password-toggle').onclick=revealMaintenanceOwnerPassword;
 $('#maintenance-wifi-change').onclick=()=>{
   if(!maintenanceNetwork||maintenanceNetwork.busy)return;
   maintenanceNetwork.editing=true;
@@ -1499,12 +1588,13 @@ function maintenanceParams(action,account,password){
     throw Error('Informe um nome de rede de até 32 bytes e uma senha de 8 a 63 bytes. A senha pode ficar em branco no Wi-Fi do estabelecimento se a rede for aberta.');
   return {ssid:account,password};
 }
-async function receiveMaintenance(ticket,timeout=610000){
+async function receiveMaintenance(ticket,timeout=610000,current=()=>true){
   if(ticket?.state!=='waiting'||!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(ticket.id||''))
     throw Error('O servidor ainda não confirmou a solicitação. Confira a placa antes de reenviar.');
   const deadline=performance.now()+timeout;
   do{
     await wait(2000);
+    if(!current())throw noOperation;
     let result;
     try{result=await boundedOperationApi('/api/admin/maintenance/result?id='+encodeURIComponent(ticket.id));}
     catch(error){if(error.status===401||error.status===403)throw error;continue;}
@@ -1516,7 +1606,7 @@ async function receiveMaintenance(ticket,timeout=610000){
 maintenanceForm.onsubmit=async event=>{
   event.preventDefault();
   const mac=maintenanceMac,board=devices.find(device=>device.mac===mac);
-  if(board?.maintenanceReady!==true||maintenanceJobs.get(mac)?.state==='waiting'||maintenancePasswordReads.has(mac))return;
+  if(board?.maintenanceReady!==true||maintenanceJobs.get(mac)?.state==='waiting'||maintenancePasswordReads.has(mac)||maintenanceOwnerReading)return;
   const {action,account,password}=maintenanceForm.elements,selected=action.value;
   if(!Object.hasOwn(maintenanceDetails,selected))return;
   if(maintenanceNetwork&&(!maintenanceNetwork.choice||maintenanceNetwork.busy))return;
@@ -1524,7 +1614,7 @@ maintenanceForm.onsubmit=async event=>{
   try{params=maintenanceParams(selected,account.value,password.disabled?'':password.value);}
   catch(error){const message=$('#maintenance-status');message.textContent=error.message;message.classList.add('error');return;}
   const job={state:'waiting',message:'Enviando à placa…'};
-  maintenanceJobs.set(mac,job);clearMaintenanceInputs();showMaintenanceStatus(mac);
+  maintenanceJobs.set(mac,job);clearMaintenanceInputs();clearMaintenanceCurrentPassword();showMaintenanceStatus(mac);
   try{
     const sending=boundedOperationApi('/api/admin/maintenance/request',{mac,action:selected,params});
     params.password='';
@@ -2215,7 +2305,7 @@ function showArea(area){
   if(activeArea==='finance')leaveFinance();
   if(activeArea==='movement'&&motion.loading)resetOperation('motion');
   if(activeArea==='people'&&people.loading)resetOperation('people');
-  if(activeArea==='licenses'){++orderLoad;clearTimeout(firmware.poll);}
+  if(activeArea==='licenses'){++orderLoad;clearTimeout(firmware.poll);clearMaintenanceCurrentPassword();}
   activeArea=area;
   for(const button of areaButtons){
     const selected=button.dataset.area===area;
