@@ -766,7 +766,7 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
   .top .right:has(#access-settings)>#updated{grid-column:1/-1;margin:0}
   .top .right:has(#access-settings)>:is(#billing,#payments,#access-settings){grid-column:span 2}
   .top .right:has(#access-settings)>:is(#refresh,#logout){grid-column:span 3}
-  .top .right:has(#access-settings) button{width:100%;padding-inline:6px;white-space:nowrap}
+  .top .right:has(#access-settings) button{width:100%;min-height:44px;padding:7px 6px;white-space:normal;line-height:1.25}
   .tabs{display:grid;width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}
   .tabs:has(>:nth-child(2):last-child),.tabs:has(>:nth-child(4):last-child),.tabs:has(>:nth-child(5):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}
   .tabs:has(>:nth-child(5):last-child)>:last-child{grid-column:1/-1}
@@ -796,7 +796,7 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
   <form class="login" id="login">
     <h2>Entrar no painel</h2>
     <p>Use o endereço do seu servidor na Cloudflare e a senha do painel (o segredo ADMIN_TOKEN que você criou no Worker).</p>
-    <label>Endereço do servidor<input name="server" type="url" placeholder="https://estacionamento-licencas.seu-usuario.workers.dev" required></label>
+    <label>Endereço do servidor<input name="server" type="url" placeholder="https://servidor.workers.dev" required></label>
     <label>Senha do painel<input name="token" type="password" required autocomplete="current-password"></label>
     <label class="check"><input type="checkbox" name="remember">Lembrar neste aparelho</label>
     <p class="error" id="login-error" hidden></p>
@@ -874,7 +874,7 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
     </div></nav>
     <section id="overview-devices" role="tabpanel" aria-labelledby="overview-tab-devices">
       <div class="stats" id="stats"></div>
-      <div class="bar"><div class="tabs" id="tabs"></div><input id="search" type="search" placeholder="Buscar nome do estacionamento ou MAC" aria-label="Buscar placas"></div>
+      <div class="bar"><div class="tabs" id="tabs"></div><input id="search" type="search" placeholder="Estacionamento ou MAC" aria-label="Buscar placas"></div>
       <div class="list" id="list"></div>
     </section>
     <section class="overview" id="overview-clients" role="tabpanel" aria-labelledby="overview-tab-clients" hidden>
