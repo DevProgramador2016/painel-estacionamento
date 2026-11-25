@@ -228,6 +228,16 @@ footer a { color: var(--brand); white-space: nowrap; text-underline-offset: 2px;
 .firmware-board .badge { white-space: normal; }
 .firmware-progress { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
 .firmware-progress progress { width: 100%; min-height: 12px; accent-color: var(--brand); }
+.backup-board { margin: 4px 0 0; }
+.backup-forms { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,310px),1fr)); gap: 14px; }
+.backup-form { min-width: 0; align-content: start; }
+.backup-form input[type="file"] { max-width: 100%; min-width: 0; }
+.backup-form .check { display: flex; align-items: flex-start; min-height: 44px; }
+.backup-form .check input { flex: none; }
+.backup-form button[type="submit"] { justify-self: start; }
+.backup-passwords { display: grid; gap: 10px; }
+.backup-status { display: grid; gap: 8px; margin-top: 2px; overflow-wrap: anywhere; }
+.backup-status button { justify-self: start; }
 
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 16px; }
 .stat {
@@ -873,6 +883,7 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
       <button type="button" id="overview-tab-clients" data-overview="clients" role="tab" aria-controls="overview-clients" aria-selected="false" tabindex="-1">Cadastros de licenças</button>
       <button type="button" id="overview-tab-reports" data-overview="reports" role="tab" aria-controls="overview-reports" aria-selected="false" tabindex="-1">Pedidos</button>
       <button type="button" id="overview-tab-firmware" data-overview="firmware" role="tab" aria-controls="overview-firmware" aria-selected="false" tabindex="-1">Atualizações</button>
+      <button type="button" id="overview-tab-backup" data-overview="backup" role="tab" aria-controls="overview-backup" aria-selected="false" tabindex="-1">Backup</button>
     </div></nav>
     <section id="overview-devices" role="tabpanel" aria-labelledby="overview-tab-devices">
       <div class="stats" id="stats"></div>
@@ -909,6 +920,32 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
         <p class="hint" id="firmware-jobs-note" role="status"></p>
       </div>
       <div class="list" id="firmware-board-list" aria-label="Situação da atualização por placa"></div>
+    </section>
+    <section class="overview" id="overview-backup" role="tabpanel" aria-labelledby="overview-tab-backup" hidden>
+      <header class="overview-top"><div><h2 id="backup-heading" tabindex="-1">Backup do estacionamento</h2><p>Baixe ou restaure o arquivo .parkbackup pelo painel, com a placa ligada e conectada à internet.</p></div></header>
+      <div class="operation-target backup-board">
+        <label>Placa do estabelecimento<select id="backup-board"><option value="">Selecione uma placa</option></select></label>
+        <p id="backup-readiness" role="status"></p>
+      </div>
+      <div class="backup-forms" id="backup-forms" hidden>
+        <form class="firmware-form backup-form" id="backup-export-form" autocomplete="off">
+          <div><h3>Baixar backup completo</h3><p class="hint">Crie uma senha para restaurar este arquivo. Guarde o arquivo e a senha em local seguro.</p></div>
+          <div class="backup-passwords" data-backup-passwords="export"></div>
+          <button type="submit" class="primary">Preparar backup</button>
+        </form>
+        <form class="firmware-form backup-form" id="backup-restore-form" autocomplete="off">
+          <div><h3>Restaurar backup</h3><p class="hint">A restauração substitui os dados e as configurações da placa selecionada pelos do arquivo. A rede e o acesso local podem mudar ao reiniciar.</p></div>
+          <label>Arquivo de backup<input name="backup" type="file" accept=".parkbackup" required></label>
+          <div class="backup-passwords" data-backup-passwords="restore"></div>
+          <label class="check"><input name="confirmation" type="checkbox" required><span id="backup-confirm-label">Confirmo restaurar nesta placa.</span></label>
+          <button type="submit" class="primary">Enviar para restauração</button>
+        </form>
+      </div>
+      <div class="backup-status" id="backup-status" hidden>
+        <p class="hint" id="backup-message" role="status"></p>
+        <div class="firmware-progress" id="backup-progress" hidden><progress aria-label="Progresso do backup" max="100"></progress><span></span></div>
+        <button type="button" id="backup-save" class="primary" hidden>Salvar arquivo .parkbackup</button>
+      </div>
     </section>
     </section>
     </div>
@@ -1104,20 +1141,25 @@ const when=t=>{if(!t)return 'nunca';const s=serverTime-t;if(s<90)return 'agora h
 function toast(t,err){clearTimeout(toastTimer);$('#toast').textContent=t;$('#toast').className=err?'err':'';$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,err?9000:4500);}
 const billingPath='/api/admin/billing';
 const firmwarePath='/api/admin/firmware/';
+const backupPath='/api/admin/backup/';
 const accessPath='/api/admin/access/';
 const publicAccessRequest=path=>path===accessPath+'login'||path===accessPath+'recover';
 const repeatsAccessPassword=path=>path===accessPath+'change'||path===accessPath+'recovery-code';
-async function api(path,body,signal){
+function panelApiUrl(path){
   const url=new URL(server);
-  const secureRequest=path===billingPath||path.startsWith('/api/admin/maintenance/')||path.startsWith(firmwarePath)||path.startsWith(accessPath);
+  const secureRequest=path===billingPath||path.startsWith('/api/admin/maintenance/')||path.startsWith(firmwarePath)||path.startsWith(backupPath)||path.startsWith(accessPath);
   const local=url.protocol==='http:'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname);
   if((url.protocol!=='https:'&&(!local||secureRequest))||url.username||url.password||url.pathname!=='/'||url.search||url.hash){
     throw new Error('Entre com o endereço HTTPS do servidor de licenças.');
   }
+  return new URL(path,url.origin);
+}
+async function api(path,body,signal){
+  const url=panelApiUrl(path);
   const binary=body instanceof Blob;
   const currentToken=token,headers={'Content-Type':binary?'application/octet-stream':'application/json'};
   if(currentToken&&!publicAccessRequest(path))headers.Authorization='Bearer '+currentToken;
-  const r=await fetch(new URL(path,url.origin),{method:body===undefined?'GET':'POST',headers,body:binary?body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:'error',signal});
+  const r=await fetch(url,{method:body===undefined?'GET':'POST',headers,body:binary?body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:'error',signal});
   const j=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));
   if(r.status===401&&currentToken&&token===currentToken&&!publicAccessRequest(path)&&!repeatsAccessPassword(path))
     endAccess('Sessão encerrada. Entre novamente para continuar.');
@@ -1155,6 +1197,7 @@ async function refreshPresence(){
       if(activeArea==='licenses'&&overview==='devices'&&!maintenanceMac)render();
       operationReadiness();
       if(firmwareViewOpen())renderFirmwareBoards();
+      if(backupViewOpen())renderBackup();
     }
   }
 }
@@ -1171,6 +1214,7 @@ async function load(){
   if(activeArea==='licenses'&&overview==='devices')render();
   if(activeArea==='licenses'&&overview==='clients')renderClients();
   if(firmwareViewOpen()){renderFirmwareBoards();refreshFirmwareJobs();}
+  if(backupViewOpen())renderBackup();
   if(maintenanceMac){restoreMaintenanceRoute();showMaintenanceStatus(maintenanceMac);}
   if(activeArea!=='finance')void refreshPresence();
 }
@@ -1196,13 +1240,14 @@ function card(d){
   ${asking?`<div class="ask">Pedindo acesso desde ${esc(when(d.requestedAt))}</div>`:''}
   <dl class="facts"><dt>Liberada até</dt><dd>${until}${d.plan&&d.status==='active'?' · '+planName[d.plan]:''}</dd><dt>Último sinal</dt><dd>${esc(when(d.lastHeartbeat))}${d.version?' · v'+esc(d.version):''}</dd>${d.note?`<dt>Observação</dt><dd>${esc(d.note)}</dd>`:''}${d.hasCode?'':'<dt>Código</dt><dd>troca liberada (a próxima placa que conectar com este MAC fica registrada)</dd>'}</dl>
   <div class="actions"><button class="primary" data-act="month" data-mac="${d.mac}">Liberar 1 mês</button><button class="primary" data-act="year" data-mac="${d.mac}">Liberar 1 ano</button><button data-act="days" data-mac="${d.mac}">Dias…</button></div>
-  <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button><button data-act="maintenance" data-mac="${d.mac}">Acesso e Wi-Fi</button>${d.firmwareReady===true?`<button data-act="firmware" data-mac="${esc(d.mac)}">Atualizar placa</button>`:''}${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div></article>`;
+  <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button><button data-act="maintenance" data-mac="${d.mac}">Acesso e Wi-Fi</button>${d.backupReady===true?`<button type="button" data-act="backup" data-mac="${esc(d.mac)}">Backup</button>`:''}${d.firmwareReady===true?`<button data-act="firmware" data-mac="${esc(d.mac)}">Atualizar placa</button>`:''}${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div></article>`;
 }
 let target='',originalExpiryDate='';
 async function act(what,mac,btn){
   const d=devices.find(x=>x.mac===mac);if(!d)return;
   if(what==='maintenance'){openMaintenance(d);return;}
   if(what==='firmware'){openFirmwareBoard(mac);return;}
+  if(what==='backup'){openBoardBackup(mac);return;}
   const name=d.name||mac;target=mac;
   if(what==='days'){$('#days-for').textContent=`${name} · ${mac}`;$('#days-dialog').showModal();return;}
   if(what==='edit'){const f=$('#edit-form');f.note.value=d.note||'';originalExpiryDate=editDate(d.expires);f.date.value=originalExpiryDate;$('#edit-for').textContent=`${name} · ${mac}`;$('#edit-dialog').showModal();return;}
@@ -1745,11 +1790,264 @@ const paymentDate=new Intl.DateTimeFormat('pt-BR',{timeZone,dateStyle:'short',ti
 const paymentMoney=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 let paymentPage=0,paymentLoad=0,selectedPayment=null,paymentWriting=false;
 
+/* Backup por placa */
+const backupSelect=$('#backup-board');
+const backupExportForm=$('#backup-export-form');
+const backupRestoreForm=$('#backup-restore-form');
+const backupJobs=new Map();
+let backupBoardOptions='';
+const backupPartSizes=[262144,1048576],backupAbsoluteLimit=1073741824,backupMemoryLimit=64*1048576;
+const backupIdPattern=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+const backupViewOpen=()=>activeArea==='licenses'&&overview==='backup'&&!maintenanceMac;
+const selectedBackupBoard=()=>devices.find(board=>board.mac===backupSelect.value);
+const backupBoardReady=board=>board?.online===true&&board.backupReady===true;
+const backupBusy=job=>Boolean(job&&(job.saving||['requesting','uploading','waiting','transferring'].includes(job.state)));
+const backupSize=bytes=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1}).format(bytes/1048576)+' MB';
+
+function addBackupPassword(form,name,id,label,autocomplete){
+  const field=document.createElement('div');
+  const description=document.createElement('label');
+  description.htmlFor=id;description.textContent=label;
+  const controls=document.createElement('div');
+  controls.className='maintenance-password';
+  const input=document.createElement('input');
+  input.id=id;input.name=name;input.type='password';input.autocomplete=autocomplete;
+  input.required=true;input.maxLength=64;input.spellcheck=false;
+  const eye=document.createElement('button');
+  eye.type='button';eye.setAttribute('aria-controls',id);eye.setAttribute('aria-pressed','false');
+  eye.setAttribute('aria-label','Mostrar '+label.toLowerCase());
+  eye.innerHTML=$('#maintenance-password-toggle').innerHTML;
+  eye.onclick=()=>{
+    const visible=input.type==='password';
+    input.type=visible?'text':'password';
+    eye.setAttribute('aria-pressed',String(visible));
+    eye.setAttribute('aria-label',(visible?'Ocultar ':'Mostrar ')+label.toLowerCase());
+  };
+  form.addEventListener('reset',()=>{
+    if(input.type==='text')eye.click();
+  });
+  controls.append(input,eye);
+  field.append(description,controls);
+  form.querySelector('[data-backup-passwords]').append(field);
+}
+addBackupPassword(backupExportForm,'password','backup-export-password','Senha do novo backup','new-password');
+addBackupPassword(backupExportForm,'repeat','backup-export-repeat','Repita a senha do backup','new-password');
+addBackupPassword(backupRestoreForm,'password','backup-restore-password','Senha do arquivo','off');
+function resetBackupForms(){
+  backupExportForm.reset();
+  backupRestoreForm.reset();
+}
+function openBoardBackup(mac){
+  showArea('licenses');
+  showOverview('backup');
+  backupSelect.value=mac;
+  resetBackupForms();
+  renderBackup();
+  $('#backup-heading').focus();
+}
+function renderBackup(){
+  const mac=backupSelect.value;
+  const options='<option value="">Selecione uma placa</option>'+sortedDevices().map(board=>
+    '<option value="'+esc(board.mac)+'">'+esc(registeredName(board)+' · '+board.mac)+'</option>').join('');
+  if(backupBoardOptions!==options){
+    backupBoardOptions=options;
+    backupSelect.innerHTML=options;
+    backupSelect.value=devices.some(board=>board.mac===mac)?mac:devices.length===1?devices[0].mac:'';
+    if(mac!==backupSelect.value)resetBackupForms();
+  }
+  const board=selectedBackupBoard(),ready=backupBoardReady(board),job=backupJobs.get(board?.mac);
+  const readiness=!board?'Selecione a placa para continuar.':!board.online?'A placa está offline. Conecte-a à internet para iniciar um backup.':
+    !board.backupReady?'O backup requer uma placa atualizada com o cartão de memória reconhecido.':'Placa online. Escolha baixar ou restaurar.';
+  $('#backup-readiness').textContent=readiness;
+  $('#backup-forms').hidden=!ready;
+  $('#backup-confirm-label').textContent=board?'Confirmo substituir os dados de '+registeredName(board)+' ('+board.mac+').':'Confirmo restaurar nesta placa.';
+  for(const form of [backupExportForm,backupRestoreForm])form.querySelector('[type="submit"]').disabled=backupBusy(job);
+  $('#backup-status').hidden=!job;
+  if(!job)return;
+  const expired=job.state==='done'&&job.action==='export'&&Date.now()/1000>=job.expiresAt;
+  const messages={
+    requesting:'Enviando a solicitação…',uploading:'Enviando o arquivo para o servidor…',
+    waiting:'Aguardando a placa online receber a solicitação…',
+    transferring:job.action==='export'?'A placa está preparando e enviando o backup…':'A placa está verificando e restaurando o arquivo…',
+    done:job.action==='export'?'Backup pronto. Salve o arquivo neste dispositivo.':
+      job.restartRequired?'Dados restaurados. A placa precisa reiniciar para aplicar as configurações de rede e acesso.':'Backup restaurado.',
+    error:'Não foi possível concluir o backup.',
+  };
+  const message=$('#backup-message'),error=Boolean(job.error||job.saveError||expired);
+  const text=job.saveMessage||job.error||(expired?'O arquivo temporário expirou. Prepare um novo backup.':messages[job.state])||'';
+  if(message.textContent!==text)message.textContent=text;
+  message.classList.toggle('error',error);
+  const progress=$('#backup-progress');
+  progress.hidden=!backupBusy(job);
+  const bytes=job.saving?job.savedBytes:job.progressBytes;
+  const percent=job.size&&Number.isFinite(bytes)?Math.min(100,Math.max(0,Math.floor(100*bytes/job.size))):null;
+  const progressBar=progress.querySelector('progress');
+  if(percent===null)progressBar.removeAttribute('value');else progressBar.value=percent;
+  progress.querySelector('span').textContent=percent===null?'':percent+'%';
+  const save=$('#backup-save');
+  save.hidden=job.action!=='export'||job.state!=='done'||expired;
+  save.disabled=Boolean(job.saving);
+}
+backupSelect.onchange=()=>{resetBackupForms();renderBackup();};
+
+function validateRemoteBackupPassword(value){
+  const length=new TextEncoder().encode(value).length;
+  if(length<8||length>64||/\p{Cc}/u.test(value))throw Error('Use uma senha de 8 a 64 bytes, sem quebras de linha. Acentos e emojis ocupam mais bytes.');
+}
+async function backupPart(job,index,body){
+  if(job.origin!==server||job.session!==token)throw Error('A sessão do painel mudou. Entre novamente.');
+  const path=backupPath+'part/'+job.id+'/'+index;
+  const headers={Authorization:'Bearer '+job.session};
+  if(body)headers['Content-Type']='application/octet-stream';
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),45000);
+  try{
+    const response=await fetch(panelApiUrl(path),{method:body?'PUT':'GET',headers,body,cache:'no-store',redirect:'error',signal:controller.signal});
+    if(response.status===401&&job.session===token)endAccess('Sessão encerrada. Entre novamente para continuar.');
+    if(!response.ok){
+      const error=await response.json().catch(()=>null);
+      throw Error(error?.error||'A transferência do arquivo foi interrompida.');
+    }
+    if(body)return;
+    if(!response.headers.get('Content-Type')?.startsWith('application/octet-stream'))throw Error('O servidor enviou uma parte inválida.');
+    const part=await response.blob();
+    if(part.size!==Math.min(job.partSize,job.size-index*job.partSize))throw Error('A parte recebida está incompleta.');
+    return part;
+  }finally{clearTimeout(timeout);}
+}
+function mergeBackupJob(job,result){
+  if(!backupIdPattern.test(result?.id||'')||(job.id&&result.id!==job.id)||!backupPartSizes.includes(result.partSize)||
+    !Number.isSafeInteger(result.maxSize)||result.maxSize<result.partSize||result.maxSize>backupAbsoluteLimit||
+    !Number.isSafeInteger(result.size)||result.size<0||result.size>result.maxSize||
+    !['uploading','waiting','transferring','done','error'].includes(result.state)||!Number.isFinite(result.expiresAt))
+    throw Error('O servidor não confirmou corretamente a solicitação de backup.');
+  Object.assign(job,{id:result.id,state:result.state,size:result.size,partSize:result.partSize,
+    progressBytes:Number.isFinite(result.progressBytes)?result.progressBytes:0,expiresAt:result.expiresAt,
+    restartRequired:result.restartRequired===true,error:result.error||''});
+}
+async function waitForRemoteBackup(job){
+  let failures=0;
+  while(['waiting','transferring'].includes(job.state)){
+    await new Promise(resolve=>setTimeout(resolve,failures?3500:1700));
+    if(job.origin!==server||job.session!==token)return;
+    let result;
+    try{result=await boundedOperationApi(backupPath+'result?id='+encodeURIComponent(job.id));}
+    catch(error){
+      if((error.status&&error.status<500)||++failures>=4)throw error;
+      continue;
+    }
+    failures=0;
+    mergeBackupJob(job,result);
+    if(backupViewOpen())renderBackup();
+  }
+}
+async function submitBackup(event,action){
+  event.preventDefault();
+  const form=event.currentTarget,board=selectedBackupBoard();
+  if(!backupBoardReady(board)||backupBusy(backupJobs.get(board.mac)))return;
+  const password=form.elements.password.value,file=form.elements.backup?.files[0];
+  if(action==='restore'&&!form.elements.confirmation.checked)return;
+  const job={action,origin:server,session:token,state:'requesting',size:file?.size||0,progressBytes:0};
+  backupJobs.set(board.mac,job);renderBackup();
+  try{
+    validateRemoteBackupPassword(password);
+    if(action==='export'&&password!==form.elements.repeat.value)throw Error('As senhas do backup não coincidem.');
+    if(action==='restore'){
+      if(!file||file.size<8||file.size>backupAbsoluteLimit)throw Error('Selecione um arquivo .parkbackup válido.');
+      const magic=await file.slice(0,8).text();
+      if(!['PARKBKP2','PARKREM1'].includes(magic))throw Error('Selecione um .parkbackup protegido por senha, criado pelo estacionamento.');
+    }
+    if(job.origin!==server||job.session!==token)return;
+    const request={mac:board.mac,action,password};
+    if(file)Object.assign(request,{size:file.size,confirm:'restore'});
+    const result=await boundedOperationApi(backupPath+'request',request);
+    mergeBackupJob(job,result);
+    if(backupSelect.value===board.mac)form.reset();
+    if(backupViewOpen())renderBackup();
+    if(file){
+      for(let offset=0;offset<file.size;offset+=job.partSize){
+        const part=file.slice(offset,offset+job.partSize);
+        await backupPart(job,offset/job.partSize,part);
+        job.progressBytes=offset+part.size;
+        if(backupViewOpen())renderBackup();
+      }
+      if(job.origin!==server||job.session!==token)return;
+      mergeBackupJob(job,await boundedOperationApi(backupPath+'start',{id:job.id}));
+      if(backupViewOpen())renderBackup();
+    }
+    await waitForRemoteBackup(job);
+  }catch(error){
+    if(action==='restore'&&job.state==='uploading'&&job.id&&job.origin===server&&job.session===token){
+      await boundedOperationApi(backupPath+'cancel',{id:job.id}).catch(()=>{});
+    }
+    job.state='error';job.error=error.name==='AbortError'?'A comunicação demorou demais. Aguarde a placa e tente novamente.':error.message;
+  }finally{if(backupViewOpen())renderBackup();}
+}
+backupExportForm.onsubmit=event=>submitBackup(event,'export');
+backupRestoreForm.onsubmit=event=>submitBackup(event,'restore');
+
+function backupFilename(mac){
+  return 'estacionamento-'+mac.replace(/:/g,'')+'-'+editDate(Math.floor(Date.now()/1000))+'.parkbackup';
+}
+function onAndroidBackupStatus(id,status,bytes){
+  const job=[...backupJobs.values()].find(candidate=>candidate.id===id&&candidate.saving);
+  if(!job)return;
+  job.savedBytes=bytes;
+  job.saving=['choosing','saving','progress'].includes(status);
+  job.saveError=status==='error'||status==='busy';
+  job.saveMessage={
+    choosing:'Escolha onde salvar o backup.',saving:'Salvando o backup…',progress:'Salvando o backup…',
+    saved:'Backup salvo no dispositivo.',cancelled:'Salvamento cancelado. Você pode tentar novamente.',
+    busy:'Já existe um salvamento em andamento no aplicativo.',error:'Não foi possível salvar o arquivo. Confira o espaço e tente novamente.',
+  }[status];
+  if(backupViewOpen())renderBackup();
+}
+$('#backup-save').onclick=async()=>{
+  const board=selectedBackupBoard(),job=backupJobs.get(board?.mac);
+  if(!job||job.action!=='export'||job.state!=='done'||job.saving||Date.now()/1000>=job.expiresAt)return;
+  const filename=backupFilename(board.mac);
+  job.saving=true;job.savedBytes=0;job.saveError=false;job.saveMessage='Escolha onde salvar o backup.';
+  renderBackup();
+  if(typeof window.ParkAndroid?.saveBackup==='function'){
+    try{window.ParkAndroid.saveBackup(filename,job.id,job.size,job.partSize,job.session);}
+    catch{onAndroidBackupStatus(job.id,'error',0);}
+    return;
+  }
+  let writer;
+  try{
+    if(typeof window.showSaveFilePicker==='function'){
+      const handle=await window.showSaveFilePicker({suggestedName:filename,types:[{description:'Backup do estacionamento',accept:{'application/octet-stream':['.parkbackup']}}]});
+      writer=await handle.createWritable();
+    }else if(job.size>backupMemoryLimit)throw Error('Para salvar arquivos acima de '+backupSize(backupMemoryLimit)+', abra o painel em um navegador com salvamento direto ou no aplicativo Android.');
+    const parts=[];
+    job.saveMessage='Salvando o backup…';
+    for(let offset=0;offset<job.size;offset+=job.partSize){
+      const part=await backupPart(job,offset/job.partSize);
+      if(writer)await writer.write(part);else parts.push(part);
+      job.savedBytes=offset+part.size;
+      if(backupViewOpen())renderBackup();
+    }
+    if(writer)await writer.close();
+    else{
+      const url=URL.createObjectURL(new Blob(parts,{type:'application/octet-stream'}));
+      const link=document.createElement('a');
+      link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+    }
+    job.saveMessage='Backup enviado para salvar neste dispositivo.';
+  }catch(error){
+    if(writer)await writer.abort().catch(()=>{});
+    job.saveError=error.name!=='AbortError'||job.savedBytes>0;
+    job.saveMessage=job.saveError?(error.message||'Não foi possível salvar o arquivo.'):'Salvamento cancelado. Você pode tentar novamente.';
+  }finally{job.saving=false;if(backupViewOpen())renderBackup();}
+};
+/* Fim do backup por placa */
+
 const tabButtons=[...document.querySelectorAll('[data-overview]')];
 const ordersFilters=$('#orders-filters'),ordersStatus=$('#orders-status');
 let orderQuery={state:'all'},orderLoad=0,orderPage=0;
 
 function showOverview(view){
+  if(overview==='backup'&&view!=='backup')resetBackupForms();
   overview=view;
   for(const button of tabButtons){
     const active=button.dataset.overview===view;
@@ -1763,6 +2061,7 @@ function showOverview(view){
   else ++orderLoad;
   if(view==='firmware')loadFirmwareOverview();
   else clearTimeout(firmware.poll);
+  if(view==='backup')renderBackup();
 }
 for(const [index,button] of tabButtons.entries()){
   button.onclick=()=>showOverview(button.dataset.overview);
@@ -2305,7 +2604,7 @@ function showArea(area){
   if(activeArea==='finance')leaveFinance();
   if(activeArea==='movement'&&motion.loading)resetOperation('motion');
   if(activeArea==='people'&&people.loading)resetOperation('people');
-  if(activeArea==='licenses'){++orderLoad;clearTimeout(firmware.poll);clearMaintenanceCurrentPassword();}
+  if(activeArea==='licenses'){++orderLoad;clearTimeout(firmware.poll);clearMaintenanceCurrentPassword();if(overview==='backup')resetBackupForms();}
   activeArea=area;
   for(const button of areaButtons){
     const selected=button.dataset.area===area;
