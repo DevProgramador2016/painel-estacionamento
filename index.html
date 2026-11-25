@@ -945,6 +945,7 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
         <p class="hint" id="backup-message" role="status"></p>
         <div class="firmware-progress" id="backup-progress" hidden><progress aria-label="Progresso do backup" max="100"></progress><span></span></div>
         <button type="button" id="backup-save" class="primary" hidden>Salvar arquivo .parkbackup</button>
+        <button type="button" id="backup-download-direct" hidden>Baixar diretamente pelo navegador</button>
       </div>
     </section>
     </section>
@@ -1887,6 +1888,9 @@ function renderBackup(){
   const save=$('#backup-save');
   save.hidden=job.action!=='export'||job.state!=='done'||expired;
   save.disabled=Boolean(job.saving);
+  const direct=$('#backup-download-direct');
+  direct.hidden=save.hidden||!job.allowDirectDownload;
+  direct.disabled=save.disabled;
 }
 backupSelect.onchange=()=>{resetBackupForms();renderBackup();};
 
@@ -2001,7 +2005,7 @@ function onAndroidBackupStatus(id,status,bytes){
   }[status];
   if(backupViewOpen())renderBackup();
 }
-$('#backup-save').onclick=async()=>{
+async function saveBackupFile(directDownload=false){
   const board=selectedBackupBoard(),job=backupJobs.get(board?.mac);
   if(!job||job.action!=='export'||job.state!=='done'||job.saving||Date.now()/1000>=job.expiresAt)return;
   const filename=backupFilename(board.mac);
@@ -2014,7 +2018,7 @@ $('#backup-save').onclick=async()=>{
   }
   let writer;
   try{
-    if(typeof window.showSaveFilePicker==='function'){
+    if(!directDownload&&typeof window.showSaveFilePicker==='function'){
       const handle=await window.showSaveFilePicker({suggestedName:filename,types:[{description:'Backup do estacionamento',accept:{'application/octet-stream':['.parkbackup']}}]});
       writer=await handle.createWritable();
     }else if(job.size>backupMemoryLimit)throw Error('Para salvar arquivos acima de '+backupSize(backupMemoryLimit)+', abra o painel em um navegador com salvamento direto ou no aplicativo Android.');
@@ -2033,13 +2037,18 @@ $('#backup-save').onclick=async()=>{
       link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
       setTimeout(()=>URL.revokeObjectURL(url),60000);
     }
-    job.saveMessage='Backup enviado para salvar neste dispositivo.';
+    job.saveMessage=writer?'Backup salvo no dispositivo.':'Backup enviado para salvar neste dispositivo.';
+    job.allowDirectDownload=false;
   }catch(error){
     if(writer)await writer.abort().catch(()=>{});
     job.saveError=error.name!=='AbortError'||job.savedBytes>0;
+    if(!directDownload&&!writer&&job.size<=backupMemoryLimit&&['AbortError','SecurityError','NotAllowedError'].includes(error.name))
+      job.allowDirectDownload=true;
     job.saveMessage=job.saveError?(error.message||'Não foi possível salvar o arquivo.'):'Salvamento cancelado. Você pode tentar novamente.';
   }finally{job.saving=false;if(backupViewOpen())renderBackup();}
-};
+}
+$('#backup-save').onclick=()=>saveBackupFile();
+$('#backup-download-direct').onclick=()=>saveBackupFile(true);
 /* Fim do backup por placa */
 
 const tabButtons=[...document.querySelectorAll('[data-overview]')];
