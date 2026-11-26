@@ -727,6 +727,9 @@ label{color:#1c2c40}
 .board-memory-meter.pressure::before { background: var(--late); }
 .board-memory-meter.stale::before { opacity: .45; }
 .board-memory-meter > span { padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 11px; line-height: 1.35; font-weight: 800; font-variant-numeric: tabular-nums; }
+#board-restart-confirm { width: min(460px, calc(100vw - 24px)); }
+#board-restart-confirm #board-restart-device { color: var(--ink); font-weight: 700; overflow-wrap: anywhere; }
+#board-restart-status { overflow-wrap: anywhere; }
 .ask{border:1px solid #efd59a;box-shadow:var(--hl)}
 .firmware-board>.more{display:flex}
 
@@ -1177,6 +1180,15 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
 <dialog id="days-dialog"><form id="days-form"><h2>Liberar por dias</h2><p id="days-for" class="mac"></p><label>Quantos dias<input name="days" type="number" min="1" max="3660" step="1" value="15" required></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Liberar</button></div></form></dialog>
 <dialog id="edit-dialog"><form id="edit-form"><h2>Editar placa</h2><p id="edit-for" class="mac"></p><label>Observação (só aparece aqui)<input name="note" maxlength="200" placeholder="Ex.: cliente, telefone, forma de pagamento"></label><label>Liberada até<input name="date" type="date"></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Salvar</button></div></form></dialog>
 <dialog id="firmware-confirm" aria-labelledby="firmware-confirm-title"><form id="firmware-confirm-form"><h2 id="firmware-confirm-title">Confirmar atualização</h2><p id="firmware-confirm-description"></p><p class="hint">As placas online recebem a atualização na próxima consulta. Para as placas offline, o agendamento fica salvo até voltarem à internet. Mantenha a placa ligada durante a instalação.</p><p class="hint error" id="firmware-confirm-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" id="firmware-confirm-cancel">Cancelar</button><button class="primary" id="firmware-confirm-send">Agendar atualização</button></div></form></dialog>
+<dialog id="board-restart-confirm" aria-labelledby="board-restart-title" aria-describedby="board-restart-impact">
+  <form id="board-restart-form">
+    <h2 id="board-restart-title">Reiniciar placa</h2>
+    <p id="board-restart-device"></p>
+    <p class="hint" id="board-restart-impact">O sistema fica indisponível por alguns instantes. Finalize qualquer registro que estiver fazendo e mantenha a placa ligada até o sistema voltar.</p>
+    <p class="hint" id="board-restart-status" role="status" tabindex="-1" aria-atomic="true" hidden></p>
+    <div class="dialog-actions"><button type="button" id="board-restart-cancel">Cancelar</button><button type="submit" class="danger" id="board-restart-submit">Reiniciar placa</button></div>
+  </form>
+</dialog>
 <dialog id="billing-dialog" aria-labelledby="billing-title">
   <form id="billing-form" autocomplete="off">
     <div><h2 id="billing-title">Pagamentos da licença</h2><p class="hint">A placa oferece renovação pela InfinitePay quando a licença vence.</p></div>
@@ -1338,7 +1350,7 @@ async function api(path,body,signal){
   if(!r.ok){const e=new Error(j.error||'Falha no servidor');e.status=r.status;throw e;}
   return j;
 }
-let presenceSnapshot=null,presenceInFlight=false;
+let presenceSnapshot=null,presenceInFlight=null,deviceRead=null,panelRefreshActive=false;
 const memoryReadingLifetime=75;
 function presenceTime(){
   return presenceSnapshot?.origin===server
@@ -1370,26 +1382,36 @@ function mergePresence(){
   }
   return changed;
 }
-async function refreshPresence(){
-  if(!token||document.hidden||presenceInFlight)return;
-  presenceInFlight=true;
+function refreshPresence(){
+  if(!token||document.hidden)return Promise.resolve(false);
   const credential=token,origin=server;
+  if(presenceInFlight?.credential===credential&&presenceInFlight.origin===origin)return presenceInFlight.promise;
+  const read={credential,origin};
+  presenceInFlight=read;
+  read.promise=readPresence(read);
+  return read.promise;
+}
+async function readPresence(read){
+  const {credential,origin}=read;
   try{
     const sample=await boundedOperationApi('/api/admin/presence');
-    if(credential!==token||origin!==server||!Array.isArray(sample.devices)||!Number.isFinite(sample.serverTime))return;
+    if(credential!==token||origin!==server||!Array.isArray(sample.devices)||!Number.isFinite(sample.serverTime))return false;
     const boards=new Map(sample.devices.filter(board=>typeof board.mac==='string'&&Number.isFinite(board.lastHeartbeat)&&Number.isFinite(board.expiresAt))
       .map(board=>[board.mac,{...board,memory:validMemoryReading(board.memory)}]));
     serverTime=Math.max(serverTime,sample.serverTime);
     presenceSnapshot={origin,boards,time:sample.serverTime,observedAt:performance.now()};
-  }catch{}finally{
-    presenceInFlight=false;
+    return true;
+  }catch{return false;}finally{
+    if(presenceInFlight===read)presenceInFlight=null;
     if(credential===token&&origin===server){
+      const wasOnline=boardRecord()?.online===true;
       const changed=mergePresence();
       if(activeArea==='licenses'&&overview==='devices'&&!maintenanceMac)refreshLicenseCards();
       if(changed){
         operationReadiness();
         if(firmwareViewOpen())renderFirmwareBoards();
         if(backupViewOpen())renderBackup();
+        if(!panelRefreshActive&&!wasOnline&&boardRecord()?.online===true)beginBoardOperation();
       }
     }
   }
@@ -1397,19 +1419,31 @@ async function refreshPresence(){
 function watchPresence(){
   if(!$('#app').hidden&&(activeArea==='movement'||activeArea==='people'||activeArea==='licenses'))void refreshPresence();
 }
-setInterval(watchPresence,8000);
+setInterval(watchPresence,5000);
 document.addEventListener('visibilitychange',watchPresence);
-async function load(){
-  const j=await api('/api/admin/devices');devices=j.devices;serverTime=j.serverTime;
-  mergePresence();
-  $('#updated').textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  refreshRemoteDevices();
-  if(activeArea==='licenses'&&overview==='devices')render();
-  if(activeArea==='licenses'&&overview==='clients')renderClients();
-  if(firmwareViewOpen()){renderFirmwareBoards();refreshFirmwareJobs();}
-  if(backupViewOpen())renderBackup();
-  if(maintenanceMac){restoreMaintenanceRoute();showMaintenanceStatus(maintenanceMac);}
-  if(activeArea!=='finance')void refreshPresence();
+window.addEventListener('focus',watchPresence);
+window.addEventListener('online',watchPresence);
+async function load({updateDetails=true}={}){
+  const read={credential:token,origin:server};
+  deviceRead=read;
+  try{
+    const j=await boundedOperationApi('/api/admin/devices');
+    if(read!==deviceRead||read.credential!==token||read.origin!==server)return false;
+    if(!Array.isArray(j.devices)||!Number.isFinite(j.serverTime))throw Error('O servidor não devolveu a lista de placas.');
+    devices=j.devices;serverTime=Math.max(serverTime,j.serverTime);
+    mergePresence();
+    refreshRemoteDevices();
+    $('#updated').textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    if(activeArea==='licenses'&&overview==='devices')render();
+    if(activeArea==='licenses'&&overview==='clients')renderClients();
+    if(firmwareViewOpen()){renderFirmwareBoards();if(updateDetails)refreshFirmwareJobs();}
+    if(backupViewOpen())renderBackup();
+    if(maintenanceMac){restoreMaintenanceRoute();showMaintenanceStatus(maintenanceMac);}
+    if(updateDetails&&activeArea!=='finance')void refreshPresence();
+    return true;
+  }finally{
+    if(deviceRead===read)deviceRead=null;
+  }
 }
 function counts(){const c={all:devices.length,online:0,asking:0,active:0,expired:0,blocked:0};for(const d of devices){if(d.online===true)c.online++;if(d.requested&&d.status!=='active')c.asking++;if(d.status==='active')c.active++;if(d.status==='expired'||d.status==='none')c.expired++;if(d.status==='blocked')c.blocked++;}return c;}
 function visibleLicenseBoards(){
@@ -1422,7 +1456,7 @@ function licensePresenceLabel(board){return board.online===true?'Online':board.l
 function licenseLastSignal(board){return `${when(board.lastHeartbeat)}${board.version?' · v'+board.version:''}`;}
 function boardMemoryState(board){
   const reading=validMemoryReading(board.memory);
-  if(!reading)return {key:'none'};
+  if(!reading)return {key:firmwareVersionCode(board.version)<firmwareVersionCode('0.22.17')?'upgrade':'none'};
   const {freeBytes,totalBytes,largestFreeBlockBytes,sampledAt}=reading;
   const now=presenceTime(), stale=board.online!==true||sampledAt>now+5||now-sampledAt>memoryReadingLifetime;
   const pressure=freeBytes<32*1024||freeBytes/totalBytes<0.2||largestFreeBlockBytes<16*1024;
@@ -1431,7 +1465,7 @@ function boardMemoryState(board){
     summary:`${used}% em uso · ${Math.round(freeBytes/1024)} de ${Math.round(totalBytes/1024)} KB livres`};
 }
 function boardMemoryContents(state){
-  if(state.key==='none')return `<div class="board-memory-heading"><strong>RAM do processador</strong><span class="badge b-none">Sem leitura</span></div><p>A placa ainda não enviou uma leitura de memória.</p>`;
+  if(state.key==='none'||state.key==='upgrade')return `<div class="board-memory-heading"><strong>RAM do processador</strong><span class="badge b-none">Sem leitura</span></div><p>${state.key==='upgrade'?'Atualize a placa para receber a leitura de RAM.':'A placa ainda não enviou uma leitura de memória.'}</p>`;
   const status=state.pressure?'Sob pressão':'Normal';
   const tone=state.stale?'none':state.pressure?'expired':'active';
   return `<div class="board-memory-heading"><strong>RAM do processador</strong><span class="badge b-${tone}">${state.stale?'Leitura antiga':status}</span></div>
@@ -1455,6 +1489,7 @@ function refreshLicenseCards(){
     presence.textContent=licensePresenceLabel(board);
     presence.className=`badge b-${board.online===true?'active':'none'}`;
     signal.textContent=licenseLastSignal(board);
+    refreshRestartControl(card,board);
     const memory=card.querySelector('[data-license-memory]'),state=boardMemoryState(board);
     if(memory.dataset.licenseMemory!==state.key){
       memory.dataset.licenseMemory=state.key;
@@ -1483,12 +1518,125 @@ function card(d){
   ${asking?`<div class="ask">Pedindo acesso desde ${esc(when(d.requestedAt))}</div>`:''}
   <dl class="facts"><dt>Liberada até</dt><dd>${until}${d.plan&&d.status==='active'?' · '+planName[d.plan]:''}</dd><dt>Último sinal</dt><dd data-license-signal>${esc(licenseLastSignal(d))}</dd>${d.note?`<dt>Observação</dt><dd>${esc(d.note)}</dd>`:''}${d.hasCode?'':'<dt>Código</dt><dd>troca liberada (a próxima placa que conectar com este MAC fica registrada)</dd>'}</dl>
   <div class="actions"><button class="primary" data-act="month" data-mac="${d.mac}">Liberar 1 mês</button><button class="primary" data-act="year" data-mac="${d.mac}">Liberar 1 ano</button><button data-act="days" data-mac="${d.mac}">Dias…</button></div>
-  <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button><button data-act="maintenance" data-mac="${d.mac}">Acesso e Wi-Fi</button>${d.backupReady===true?`<button type="button" data-act="backup" data-mac="${esc(d.mac)}">Backup</button>`:''}${d.firmwareReady===true?`<button data-act="firmware" data-mac="${esc(d.mac)}">Atualizar placa</button>`:''}${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div>
+  <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button><button data-act="maintenance" data-mac="${d.mac}">Acesso e Wi-Fi</button>${d.backupReady===true?`<button type="button" data-act="backup" data-mac="${esc(d.mac)}">Backup</button>`:''}${d.firmwareReady===true?`<button data-act="firmware" data-mac="${esc(d.mac)}">Atualizar placa</button>`:''}${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button type="button" data-act="restart" data-mac="${esc(d.mac)}"${restartControlAttrs(d)}>Reiniciar placa</button><button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div>
   <section class="board-memory" data-license-memory="${memory.key}">${boardMemoryContents(memory)}</section></article>`;
 }
 let target='',originalExpiryDate='';
+const restartDialog=$('#board-restart-confirm'),restartForm=$('#board-restart-form');
+const restartConfirm=$('#board-restart-submit'),restartClose=$('#board-restart-cancel'),restartStatus=$('#board-restart-status');
+let restartSelection=null;
+const restartTicketId=/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i;
+
+function restartUnavailable(board){
+  if(board?.restartReady!==true)return 'O reinício remoto ainda não está disponível nesta placa.';
+  return board.online===true?'':'A placa precisa estar online para reiniciar.';
+}
+function restartControlAttrs(board){
+  const reason=restartUnavailable(board);
+  return reason?` disabled title="${esc(reason)}" aria-label="Reiniciar placa. ${esc(reason)}"`:'';
+}
+function refreshRestartControl(card,board){
+  const button=card.querySelector('[data-act="restart"]');
+  const reason=restartUnavailable(board);
+  button.disabled=Boolean(reason);
+  if(reason){
+    button.title=reason;
+    button.setAttribute('aria-label',`Reiniciar placa. ${reason}`);
+  }else{
+    button.removeAttribute('title');
+    button.removeAttribute('aria-label');
+  }
+}
+function restartMessage(message,tone=''){
+  restartStatus.textContent=message;
+  restartStatus.classList.toggle('error',tone==='error');
+  restartStatus.hidden=!message;
+}
+function openBoardRestart(board,trigger){
+  if(restartDialog.open||restartUnavailable(board))return;
+  restartSelection={mac:board.mac,trigger,busy:false,sent:false};
+  $('#board-restart-device').textContent=board.name?`${board.name} · ${board.mac}`:board.mac;
+  restartMessage('');
+  restartConfirm.hidden=false;restartConfirm.disabled=false;
+  restartClose.disabled=false;restartClose.textContent='Cancelar';
+  restartDialog.showModal();
+  restartClose.focus();
+}
+function finishBoardRestart(selection,message,tone=''){
+  if(!restartDialog.open||restartSelection!==selection)return;
+  selection.busy=false;
+  restartMessage(message,tone);
+  restartConfirm.hidden=true;
+  restartClose.disabled=false;restartClose.textContent='Fechar';restartClose.focus();
+}
+async function waitForBoardRestart(selection,id){
+  const deadline=performance.now()+120000;
+  let failures=0,delay=850;
+  while(restartDialog.open&&restartSelection===selection&&performance.now()<deadline){
+    await wait(delay);
+    delay=1500;
+    if(!restartDialog.open||restartSelection!==selection)return;
+    let result;
+    try{
+      result=await boundedOperationApi('/api/admin/restart/result?id='+encodeURIComponent(id));
+      if(result.id!==id||!['queued','accepted','done','error'].includes(result.state))
+        throw Error('Resposta de reinício inválida.');
+      failures=0;
+    }catch(error){
+      if(error.status===401||error.status===403||error.status===404||++failures>=3)break;
+      continue;
+    }
+    if(result.state==='accepted')restartMessage('A placa recebeu o comando. Aguardando a reconexão.');
+    if(result.state==='done'){
+      finishBoardRestart(selection,'Reinício confirmado. A placa voltou a se comunicar.');
+      void refreshPresence();
+      return;
+    }
+    if(result.state==='error'){
+      const message=typeof result.message==='string'?result.message.trim().slice(0,240):'';
+      finishBoardRestart(selection,message||'O servidor informou que o reinício não foi concluído.','error');
+      return;
+    }
+  }
+  finishBoardRestart(selection,'Não foi possível confirmar o reinício. Confira o status da placa antes de tentar novamente.','error');
+}
+restartForm.onsubmit=async event=>{
+  event.preventDefault();
+  const selection=restartSelection;
+  if(!restartDialog.open||!selection||selection.busy||selection.sent)return;
+  const reason=restartUnavailable(devices.find(board=>board.mac===selection.mac));
+  if(reason){finishBoardRestart(selection,reason,'error');return;}
+  selection.sent=true;selection.busy=true;
+  restartConfirm.disabled=true;restartClose.disabled=true;
+  restartMessage('Enviando o comando à placa…');
+  restartStatus.focus();
+  let request;
+  try{
+    request=await boundedOperationApi('/api/admin/restart/request',{mac:selection.mac});
+    if(!restartTicketId.test(request.id||'')||request.state!=='queued')throw Error('Pedido de reinício inválido.');
+  }catch(error){
+    const message=Number.isInteger(error.status)&&error.message
+      ?error.message:'Não foi possível confirmar o envio. Confira o status da placa antes de tentar novamente.';
+    finishBoardRestart(selection,message,'error');
+    return;
+  }
+  restartMessage('Pedido enviado. Aguardando a placa receber o comando.');
+  await waitForBoardRestart(selection,request.id);
+};
+restartClose.onclick=()=>{if(!restartSelection?.busy)restartDialog.close();};
+restartDialog.addEventListener('cancel',event=>{if(restartSelection?.busy)event.preventDefault();});
+restartDialog.addEventListener('close',()=>{
+  if(restartDialog.open||!restartSelection)return;
+  const {mac,trigger}=restartSelection;
+  restartSelection=null;
+  const card=[...$('#list').querySelectorAll('[data-license-board]')].find(item=>item.dataset.licenseBoard===mac);
+  const fallback=card?.querySelector('[data-act="restart"]:not(:disabled),summary,[data-act="edit"]');
+  (trigger.isConnected&&!trigger.disabled?trigger:fallback||$('#search')).focus({preventScroll:true});
+});
+
 async function act(what,mac,btn){
   const d=devices.find(x=>x.mac===mac);if(!d)return;
+  if(what==='restart'){openBoardRestart(d,btn);return;}
   if(what==='maintenance'){openMaintenance(d);return;}
   if(what==='firmware'){openFirmwareBoard(mac);return;}
   if(what==='backup'){openBoardBackup(mac);return;}
@@ -2391,8 +2539,9 @@ function setFirmwareRelease(id){
   }
   clearTimeout(firmware.poll);
   updateFirmwareRelease();
-  if(id)refreshFirmwareJobs();
-  else firmwareMessage('#firmware-jobs-note','Envie uma versão para agendar a primeira atualização.');
+  if(id)return refreshFirmwareJobs();
+  firmwareMessage('#firmware-jobs-note','Envie uma versão para agendar a primeira atualização.');
+  return true;
 }
 function mergeFirmwareJobs(jobs){
   for(const job of jobs){
@@ -2416,18 +2565,24 @@ async function loadFirmwareOverview(preferred=''){
     firmwareSelect.replaceChildren(...(firmware.releases.length?firmware.releases.map(release=>new Option(`Versão ${release.version}`,release.id)):[new Option('Nenhuma versão enviada','')]));
     firmwareSelect.disabled=!firmware.releases.length;
     firmwareSelect.value=id;
-    setFirmwareRelease(id);
+    return setFirmwareRelease(id);
   }catch(error){
     if(revision!==firmware.releaseRevision||!firmwareViewOpen())return;
     firmware.ready=false;renderFirmwareBoards();
     firmwareMessage('#firmware-jobs-note',error.name==='AbortError'?'O servidor demorou a responder. Atualize a situação para tentar novamente.':error.message,true);
+    return false;
   }
 }
-async function refreshFirmwareJobs(){
+function refreshFirmwareJobs(){
   const releaseId=firmware.releaseId;
-  if(!releaseId||!firmwareViewOpen()||document.hidden||firmware.jobRead)return;
+  if(!releaseId||!firmwareViewOpen()||document.hidden)return;
+  if(firmware.jobRead)return firmware.jobRead.promise;
   clearTimeout(firmware.poll);
   const read=firmware.jobRead={};
+  read.promise=readFirmwareJobs(releaseId,read);
+  return read.promise;
+}
+async function readFirmwareJobs(releaseId,read){
   let failed=false;
   if(!firmware.ready)firmwareMessage('#firmware-jobs-note','Consultando a situação das placas…');
   try{
@@ -2439,11 +2594,13 @@ async function refreshFirmwareJobs(){
     const available=devices.filter(board=>firmwareCandidate(board)).length;
     const pending=[...firmware.jobs.values()].filter(firmwareBusy).length;
     firmwareMessage('#firmware-jobs-note',`${available} ${available===1?'placa disponível':'placas disponíveis'}${pending?` · ${pending} ${pending===1?'atualização pendente ou em andamento':'atualizações pendentes ou em andamento'}`:''}.`);
+    return true;
   }catch(error){
     if(read!==firmware.jobRead||!firmwareViewOpen())return;
     failed=true;firmware.ready=false;
     const message=error.name==='AbortError'?'O servidor demorou a responder.':error.message;
     firmwareMessage('#firmware-jobs-note',`${message}${firmware.jobs.size?' A tela mostra a última situação recebida.':''}`,true);
+    return false;
   }finally{
     if(read===firmware.jobRead){
       firmware.jobRead=null;
@@ -2472,16 +2629,7 @@ function confirmFirmwareUpdate(mac=''){
   firmwareConfirm.showModal();$('#firmware-confirm-cancel').focus();
 }
 firmwareSelect.onchange=()=>setFirmwareRelease(firmwareSelect.value);
-$('#firmware-refresh').onclick=async event=>{
-  const button=event.currentTarget;
-  button.disabled=true;
-  try{
-    await load();
-    await loadFirmwareOverview();
-  }catch(error){
-    firmwareMessage('#firmware-jobs-note',error.message,true);
-  }finally{button.disabled=false;}
-};
+$('#firmware-refresh').onclick=refreshPanel;
 $('#firmware-update-all').onclick=()=>confirmFirmwareUpdate();
 $('#firmware-board-list').onclick=event=>{
   const button=event.target.closest('[data-firmware-update]');
@@ -2644,14 +2792,14 @@ function renderFinance(data){
   }).join('')):'<p class="empty">Nenhuma movimentação neste filtro.</p>';
   financeStatus(financePageInfo());
 }
-async function loadFinance(page=0){
+async function loadFinance(page=0,{repeat=false}={}){
   if(activeArea!=='finance')return;
   const {month,kind}=financeForm.elements;
   month.max=currentFinanceMonth();
   if(!month.value)month.value=month.max;
-  if(!financeForm.reportValidity())return;
   const before=finance.query;
-  const same=before?.month===month.value&&before.kind===kind.value;
+  if((!repeat||!before)&&!financeForm.reportValidity())return;
+  const same=Boolean(before&&(repeat||before.month===month.value&&before.kind===kind.value));
   const query=same?before:{month:month.value,kind:kind.value};
   if(!same){
     page=0;finance.result=null;finance.exporting=null;
@@ -2670,6 +2818,7 @@ async function loadFinance(page=0){
       if(revision!==finance.revision||activeArea!=='finance')return;
     }
     finance.page=page;finance.result=data;renderFinance(data);
+    return true;
   }catch(error){
     if(revision===finance.revision&&activeArea==='finance')
       financeStatus(error.name==='AbortError'?'A consulta demorou. Toque em Consultar para tentar novamente.':error.message,true);
@@ -2736,20 +2885,22 @@ function orderReportRow(order){
     <td data-label="Plano"><span>${period}</span></td><td data-label="Situação"><div><span class="badge b-${state}">${paymentState[state]}</span>${order.confirmedAt?`<small>${esc(orderDate(order.confirmedAt))}</small>`:''}</div></td>
     <td class="num" data-label="Valor do pedido"><span>${paymentMoney.format(order.amount/100)}</span></td></tr>`;
 }
-async function loadOrders(page=0){
+async function loadOrders(page=0,{preserve=false}={}){
   const seq=++orderLoad;
   const params=new URLSearchParams(orderQuery);
   params.set('page',String(page));
   const result=$('#orders-result'),summary=$('#orders-summary'),pagination=$('#orders-pagination');
-  summary.hidden=pagination.hidden=true;
-  result.replaceChildren();
+  if(!preserve){
+    summary.hidden=pagination.hidden=true;
+    result.replaceChildren();
+  }
   result.setAttribute('aria-busy','true');
   ordersStatus.textContent='Carregando pedidos…';ordersStatus.classList.remove('error');
   try{
-    const data=await api('/api/admin/license-report?'+params);
+    const data=await boundedOperationApi('/api/admin/license-report?'+params);
     if(seq!==orderLoad||activeArea!=='licenses'||overview!=='reports')return;
     const lastPage=Math.max(0,Math.ceil(data.total/data.pageSize)-1);
-    if(page>lastPage)return loadOrders(lastPage);
+    if(page>lastPage)return loadOrders(lastPage,{preserve});
     orderPage=data.page;
     $('#orders-summary-list').innerHTML=Object.entries(paymentState).map(([state,label])=>{
       const {count=0,amount=0}=data.summary[state]||{};
@@ -2763,12 +2914,16 @@ async function loadOrders(page=0){
     $('#orders-prev').disabled=orderPage===0;
     $('#orders-next').disabled=orderPage>=lastPage;
     $('#orders-page').textContent=`Página ${orderPage+1} de ${lastPage+1}`;
+    return true;
   }catch(error){
     if(seq!==orderLoad||activeArea!=='licenses'||overview!=='reports')return;
     ordersStatus.textContent=error.status===404?'Atualize o servidor de licenças para consultar todos os pedidos.':error.message;
     ordersStatus.classList.add('error');
-    result.innerHTML='<button type="button">Tentar novamente</button>';
-    result.querySelector('button').onclick=()=>loadOrders(page);
+    if(preserve&&result.children.length)ordersStatus.textContent+=' A última consulta continua visível.';
+    else{
+      result.innerHTML='<button type="button">Tentar novamente</button>';
+      result.querySelector('button').onclick=()=>loadOrders(page);
+    }
   }finally{
     if(seq===orderLoad)result.removeAttribute('aria-busy');
   }
@@ -3288,12 +3443,13 @@ $('#operation-views').onclick=event=>{
   for(const other of $('#operation-views').querySelectorAll('[data-motion]'))other.setAttribute('aria-pressed',String(other===button));
   resetOperation('motion');showFilterFields();
 };
-async function loadMotion(page=0){
+async function loadMotion(page=0,{preserve=false}={}){
   const query=motion.query;if(!query||motion.loading)return;
   const context=startOperation('motion');if(!context)return;
   const {mode,period,from,to,filters}=query;
   const year=period==='year',range={from,to};
-  const result=$('#motion-result');result.replaceChildren();$('#motion-paging').hidden=true;
+  const result=$('#motion-result');
+  if(!preserve){result.replaceChildren();$('#motion-paging').hidden=true;}
   const request=(operation,params)=>remoteQuery(context.mac,operation,params,context.current,context.progress);
   const progressRange=from===to?brDay(from):`${brDay(from)} a ${brDay(to)}`;
   try{
@@ -3324,16 +3480,19 @@ async function loadMotion(page=0){
     if(!context.current())return;
     result.innerHTML=markup;motion.page=page;
     if(pagination)operationPaging('motion',page,...pagination);
+    else $('#motion-paging').hidden=true;
     operationMessage('motion',progressRange);
+    return true;
   }catch(error){
-    if(context.current()&&error!==noOperation)operationMessage('motion',error.message||remoteUnavailable,true);
+    if(context.current()&&error!==noOperation)
+      operationMessage('motion',(error.message||remoteUnavailable)+(preserve&&result.children.length?' A última consulta continua visível.':''),true);
   }finally{context.finish();}
 }
 function consultMovement(){
   if(motion.loading)return;
   const range=movementRange();if(!range)return;
   motion.query={...range,mode:motion.mode,filters:motionFilters()};
-  loadMotion();
+  return loadMotion();
 }
 motionForm.onsubmit=event=>{event.preventDefault();consultMovement();};
 $('#motion-prev').onclick=()=>loadMotion(motion.page-1);
@@ -3399,10 +3558,11 @@ function beginBoardOperation(){
   if(activeArea==='movement'&&!motion.query)consultMovement();
   if(activeArea==='people'&&!people.query){people.query=peopleQuery();loadPeople();}
 }
-async function loadPeople(page=0){
+async function loadPeople(page=0,{preserve=false}={}){
   const query=people.query;if(!query||people.loading)return;
   const context=startOperation('people');if(!context)return;
-  const output=$('#people-result');output.replaceChildren();$('#people-paging').hidden=true;
+  const output=$('#people-result');
+  if(!preserve){output.replaceChildren();$('#people-paging').hidden=true;}
   try{
     const board=boardRecord(),historyReady=board?.operationsDataVersion>=2;
     const legacyMonthly=query.filter==='monthly'&&!historyReady;
@@ -3414,8 +3574,10 @@ async function loadPeople(page=0){
     $('#people-count').textContent=`${data.total} ${data.total===1?'cadastro':'cadastros'}${query.filter==='monthly'?' de mensalistas':''}`;
     operationMessage('people',legacyMonthly?'A lista mostra os planos principais. Atualize a placa para consultar os veículos e atendimentos de cada mensalista.':'');
     operationPaging('people',page,data.total,data.pageSize||12);
+    return true;
   }catch(error){
-    if(context.current()&&error!==noOperation)operationMessage('people',error.message||remoteUnavailable,true);
+    if(context.current()&&error!==noOperation)
+      operationMessage('people',(error.message||remoteUnavailable)+(preserve&&output.children.length?' A última consulta continua visível.':''),true);
   }finally{context.finish();}
 }
 peopleForm.onsubmit=event=>{
@@ -3599,14 +3761,60 @@ for(const [mode,form] of [['recheck',recheckForm],['resolve',resolveForm]]){
 paymentsDialog.addEventListener('close',()=>{paymentLoad++;closePaymentAction();});
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 $('#search').oninput=render;
-$('#refresh').onclick=()=>{
-  load().catch(e=>toast(e.message,true));
-  if(activeArea==='finance')loadFinance(finance.page);
-  if(activeArea==='licenses'&&overview==='reports')loadOrders(orderPage);
-  if(firmwareViewOpen())loadFirmwareOverview();
-  if(activeArea==='movement'&&motion.query)loadMotion(motion.page);
-  if(activeArea==='people'&&people.query)loadPeople(people.page);
-};
+async function refreshPanel(event){
+  if(panelRefreshActive||!token)return;
+  const button=event.currentTarget,credential=token,origin=server,area=activeArea,view=overview;
+  const controls=[$('#refresh'),$('#firmware-refresh')];
+  const mac=boardSelect.value,caption=button.textContent;
+  const current=()=>token===credential&&server===origin&&area===activeArea&&
+    (area!=='licenses'||view===overview)&&(area!=='movement'&&area!=='people'||mac===boardSelect.value);
+  panelRefreshActive=true;
+  for(const control of controls){control.disabled=true;control.setAttribute('aria-busy','true');}
+  if(!button.querySelector('svg'))button.textContent='Atualizando…';
+  if(firmwareViewOpen())firmwareMessage('#firmware-jobs-note','Atualizando a situação das placas…');
+  toast('Atualizando dados…');
+  try{
+    if(!await load({updateDetails:false})||!current())return;
+    let present=area==='finance'||await refreshPresence();
+    if(!current())return;
+    let updated=true;
+    if(area==='finance')updated=await loadFinance(finance.page,{repeat:true});
+    else if(area==='licenses'&&view==='reports')updated=await loadOrders(orderPage,{preserve:true});
+    else if(firmwareViewOpen())updated=await loadFirmwareOverview();
+    else if(mac&&(area==='movement'||area==='people')){
+      const operation=area==='movement'?'motion':'people';
+      if(boardRecord()?.operationsRemote!==true){toast('Dados do painel atualizados. Esta placa não permite consultas remotas.',true);return;}
+      if(operationState(operation).loading){toast('A consulta desta placa já está em andamento.');return;}
+      if(present&&boardRecord()?.online===false&&boardRecord().lastHeartbeat>0){
+        operationMessage(operation,'A placa está offline. A última consulta concluída continua disponível, se houver.',true);
+        toast('A placa está offline. Consulte novamente quando ela voltar à internet.',true);
+        return;
+      }
+      if(operation==='motion')updated=await (motion.query?loadMotion(motion.page,{preserve:true}):consultMovement());
+      else{
+        if(!people.query)people.query=peopleQuery();
+        updated=await loadPeople(people.page,{preserve:true});
+      }
+      if(updated===true)present=true;
+    }
+    if(!current())return;
+    if(updated!==true)toast('A tela atual não pôde ser atualizada. Confira a mensagem da consulta.',true);
+    else if(!present)toast('Dados atualizados. A conexão das placas não pôde ser confirmada.',true);
+    else toast('Dados atualizados.');
+  }catch(error){
+    if(current()){
+      const message=error.name==='AbortError'?'O servidor de licenças demorou para responder.':
+        error instanceof TypeError?'Não foi possível conectar ao servidor de licenças. Confira a internet.':error.message;
+      if(firmwareViewOpen())firmwareMessage('#firmware-jobs-note',message,true);
+      toast(message,true);
+    }
+  }finally{
+    panelRefreshActive=false;
+    for(const control of controls){control.disabled=false;control.removeAttribute('aria-busy');}
+    if(!button.querySelector('svg'))button.textContent=caption;
+  }
+}
+$('#refresh').onclick=refreshPanel;
 const accessLogin=$('#login'),accessSettings=$('#access-settings-dialog'),accessRecovery=$('#access-recover-dialog'),accessCode=$('#access-code-dialog');
 const accessPasswordForm=$('#access-password-form'),accessCodeForm=$('#access-code-form'),accessRecoverForm=$('#access-recover-form');
 const accessDialogs=[accessSettings,accessRecovery];
@@ -3769,7 +3977,7 @@ async function enter(){
   await load();
   $('#login').hidden=true;$('#login-error').hidden=true;$('#app').hidden=false;$('#session').hidden=false;
   restoreMaintenanceRoute();
-  clearInterval(timer);timer=setInterval(()=>{if(!document.hidden&&!document.querySelector('dialog[open]'))load().catch(()=>{});},30000);
+  clearInterval(timer);timer=setInterval(()=>{if(!document.hidden&&!deviceRead&&!panelRefreshActive&&!document.querySelector('dialog[open]'))load().catch(()=>{});},30000);
 }
 async function openAccessSession(password,remember){
   const result=await boundedOperationApi(accessPath+'login',{password,remember});
