@@ -719,6 +719,14 @@ label{color:#1c2c40}
 .card>.more{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;border-top:1px dashed color-mix(in srgb,var(--line) 90%,transparent);padding-top:13px}
 .card>.more button{min-height:42px;width:100%;padding-inline:8px;font-size:13px;overflow-wrap:normal}
 .card>.more button:last-child:nth-child(odd){grid-column:1/-1}
+.board-memory { min-width: 0; display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-2); }
+.board-memory-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 5px 10px; font-size: 13px; }
+.board-memory p { margin: 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.board-memory-meter { display: grid; place-items: center; position: relative; overflow: hidden; isolation: isolate; min-height: 26px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.board-memory-meter::before { content: ''; position: absolute; z-index: -1; inset: 0 auto 0 0; width: var(--memory-use); background: linear-gradient(180deg,var(--brand-hover),var(--brand)); }
+.board-memory-meter.pressure::before { background: var(--late); }
+.board-memory-meter.stale::before { opacity: .45; }
+.board-memory-meter > span { padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 11px; line-height: 1.35; font-weight: 800; font-variant-numeric: tabular-nums; }
 .ask{border:1px solid #efd59a;box-shadow:var(--hl)}
 .firmware-board>.more{display:flex}
 
@@ -1331,9 +1339,25 @@ async function api(path,body,signal){
   return j;
 }
 let presenceSnapshot=null,presenceInFlight=false;
+const memoryReadingLifetime=75;
+function presenceTime(){
+  return presenceSnapshot?.origin===server
+    ?Math.max(serverTime,presenceSnapshot.time+(performance.now()-presenceSnapshot.observedAt)/1000)
+    :serverTime;
+}
+function validMemoryReading(reading){
+  if(!reading)return null;
+  const {freeBytes,totalBytes,largestFreeBlockBytes,sampledAt}=reading;
+  return [freeBytes,totalBytes,largestFreeBlockBytes,sampledAt].every(value=>Number.isSafeInteger(value)&&value>=0)&&
+    totalBytes>0&&freeBytes<=totalBytes&&largestFreeBlockBytes<=freeBytes&&sampledAt>0
+    ?{freeBytes,totalBytes,largestFreeBlockBytes,sampledAt}:null;
+}
+function memoryReadingKey(reading){
+  return reading?`${reading.sampledAt}:${reading.freeBytes}:${reading.totalBytes}:${reading.largestFreeBlockBytes}`:'';
+}
 function mergePresence(){
   if(!presenceSnapshot||presenceSnapshot.origin!==server)return false;
-  const time=Math.max(serverTime,presenceSnapshot.time+(performance.now()-presenceSnapshot.observedAt)/1000);
+  const time=presenceTime();
   let changed=false;
   for(const device of devices){
     const sample=presenceSnapshot.boards.get(device.mac);
@@ -1341,6 +1365,8 @@ function mergePresence(){
     changed=changed||heartbeat!==device.lastHeartbeat||online!==device.online;
     device.lastHeartbeat=heartbeat;
     device.online=online;
+    const memory=sample?.memory??null;
+    if(memoryReadingKey(memory)!==memoryReadingKey(device.memory))device.memory=memory;
   }
   return changed;
 }
@@ -1352,16 +1378,19 @@ async function refreshPresence(){
     const sample=await boundedOperationApi('/api/admin/presence');
     if(credential!==token||origin!==server||!Array.isArray(sample.devices)||!Number.isFinite(sample.serverTime))return;
     const boards=new Map(sample.devices.filter(board=>typeof board.mac==='string'&&Number.isFinite(board.lastHeartbeat)&&Number.isFinite(board.expiresAt))
-      .map(board=>[board.mac,board]));
+      .map(board=>[board.mac,{...board,memory:validMemoryReading(board.memory)}]));
     serverTime=Math.max(serverTime,sample.serverTime);
     presenceSnapshot={origin,boards,time:sample.serverTime,observedAt:performance.now()};
   }catch{}finally{
     presenceInFlight=false;
-    if(credential===token&&origin===server&&mergePresence()){
-      if(activeArea==='licenses'&&overview==='devices'&&!maintenanceMac)render();
-      operationReadiness();
-      if(firmwareViewOpen())renderFirmwareBoards();
-      if(backupViewOpen())renderBackup();
+    if(credential===token&&origin===server){
+      const changed=mergePresence();
+      if(activeArea==='licenses'&&overview==='devices'&&!maintenanceMac)refreshLicenseCards();
+      if(changed){
+        operationReadiness();
+        if(firmwareViewOpen())renderFirmwareBoards();
+        if(backupViewOpen())renderBackup();
+      }
     }
   }
 }
@@ -1383,28 +1412,79 @@ async function load(){
   if(activeArea!=='finance')void refreshPresence();
 }
 function counts(){const c={all:devices.length,online:0,asking:0,active:0,expired:0,blocked:0};for(const d of devices){if(d.online===true)c.online++;if(d.requested&&d.status!=='active')c.asking++;if(d.status==='active')c.active++;if(d.status==='expired'||d.status==='none')c.expired++;if(d.status==='blocked')c.blocked++;}return c;}
+function visibleLicenseBoards(){
+  const q=$('#search').value.trim().toLowerCase();
+  return devices.filter(d=>filter==='all'||(filter==='online'?d.online===true:filter==='asking'?d.requested&&d.status!=='active':filter==='expired'?d.status==='expired'||d.status==='none':d.status===filter))
+    .filter(d=>!q||(d.name+' '+d.mac+' '+(d.note||'')).toLowerCase().includes(q))
+    .sort((a,b)=>(b.requested&&b.status!=='active')-(a.requested&&a.status!=='active')||(a.name||'').localeCompare(b.name||''));
+}
+function licensePresenceLabel(board){return board.online===true?'Online':board.lastHeartbeat>0?'Offline':'Sem sinal';}
+function licenseLastSignal(board){return `${when(board.lastHeartbeat)}${board.version?' · v'+board.version:''}`;}
+function boardMemoryState(board){
+  const reading=validMemoryReading(board.memory);
+  if(!reading)return {key:'none'};
+  const {freeBytes,totalBytes,largestFreeBlockBytes,sampledAt}=reading;
+  const now=presenceTime(), stale=board.online!==true||sampledAt>now+5||now-sampledAt>memoryReadingLifetime;
+  const pressure=freeBytes<32*1024||freeBytes/totalBytes<0.2||largestFreeBlockBytes<16*1024;
+  const used=Math.round((totalBytes-freeBytes)*100/totalBytes);
+  return {key:`${memoryReadingKey(reading)}:${stale}`,stale,pressure,used,sampledAt,
+    summary:`${used}% em uso · ${Math.round(freeBytes/1024)} de ${Math.round(totalBytes/1024)} KB livres`};
+}
+function boardMemoryContents(state){
+  if(state.key==='none')return `<div class="board-memory-heading"><strong>RAM do processador</strong><span class="badge b-none">Sem leitura</span></div><p>A placa ainda não enviou uma leitura de memória.</p>`;
+  const status=state.pressure?'Sob pressão':'Normal';
+  const tone=state.stale?'none':state.pressure?'expired':'active';
+  return `<div class="board-memory-heading"><strong>RAM do processador</strong><span class="badge b-${tone}">${state.stale?'Leitura antiga':status}</span></div>
+    <div class="board-memory-meter${state.pressure?' pressure':''}${state.stale?' stale':''}" role="progressbar" aria-label="RAM em uso" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${state.used}" aria-valuetext="${state.summary}" style="--memory-use:${state.used}%"><span aria-hidden="true">${state.used}%</span></div>
+    <p>${state.summary}</p>${state.stale?`<p>Última leitura · ${esc(orderDate(state.sampledAt))} · ${status}</p>`:''}`;
+}
+function refreshLicenseCards(){
+  const list=$('#list'),cards=[...list.querySelectorAll('[data-license-board]')];
+  const onlineTab=$('#tabs [data-filter="online"]');
+  if(onlineTab)onlineTab.textContent=`Online (${counts().online})`;
+  if(filter==='online'){
+    const expected=visibleLicenseBoards();
+    const moved=expected.length!==cards.length||expected.some((board,index)=>cards[index]?.dataset.licenseBoard!==board.mac);
+    if(moved&&!list.contains(document.activeElement)){render();return;}
+  }
+  const byMac=new Map(devices.map(board=>[board.mac,board]));
+  for(const card of cards){
+    const board=byMac.get(card.dataset.licenseBoard);
+    if(!board)continue;
+    const presence=card.querySelector('[data-license-presence]'),signal=card.querySelector('[data-license-signal]');
+    presence.textContent=licensePresenceLabel(board);
+    presence.className=`badge b-${board.online===true?'active':'none'}`;
+    signal.textContent=licenseLastSignal(board);
+    const memory=card.querySelector('[data-license-memory]'),state=boardMemoryState(board);
+    if(memory.dataset.licenseMemory!==state.key){
+      memory.dataset.licenseMemory=state.key;
+      memory.innerHTML=boardMemoryContents(state);
+    }
+  }
+}
+$('#list').addEventListener('focusout',()=>queueMicrotask(()=>{
+  if(filter==='online'&&activeArea==='licenses'&&overview==='devices'&&!maintenanceMac)refreshLicenseCards();
+}));
 function render(){
   const c=counts();
   $('#stats').innerHTML=`<div class="stat"><span>Placas</span><strong>${c.all}</strong></div><div class="stat"><span>Liberadas</span><strong>${c.active}</strong></div><div class="stat"><span>Vencidas ou sem liberação</span><strong>${c.expired}</strong></div><div class="stat${c.asking?' wait':''}"><span>Pedindo acesso</span><strong>${c.asking}</strong></div>`;
   $('#tabs').innerHTML=[['all','Todas'],['online',`Online (${c.online})`],['asking',`Pedidos (${c.asking})`],['active','Liberadas'],['expired','Vencidas'],['blocked','Bloqueadas']].map(([k,t])=>`<button type="button" data-filter="${k}" aria-pressed="${filter===k}">${t}</button>`).join('');
   document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;render();});
-  const q=$('#search').value.trim().toLowerCase();
-  const list=devices.filter(d=>filter==='all'||(filter==='online'?d.online===true:filter==='asking'?d.requested&&d.status!=='active':filter==='expired'?d.status==='expired'||d.status==='none':d.status===filter))
-    .filter(d=>!q||(d.name+' '+d.mac+' '+(d.note||'')).toLowerCase().includes(q))
-    .sort((a,b)=>(b.requested&&b.status!=='active')-(a.requested&&a.status!=='active')||(a.name||'').localeCompare(b.name||''));
+  const list=visibleLicenseBoards();
   $('#list').innerHTML=list.length?list.map(card).join(''):`<div class="empty">${devices.length?'Nenhuma placa neste filtro.':'Nenhuma placa registrada ainda. Ela aparece aqui na primeira vez que se conectar à internet.'}</div>`;
   document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>act(b.dataset.act,b.dataset.mac,b));
 }
 function card(d){
   const asking=d.requested&&d.status!=='active',left=d.expires?Math.ceil((d.expires-serverTime)/86400):0;
   const until=d.expires?`${day(d.expires)}${d.status==='active'?` (${left} ${left===1?'dia':'dias'})`:''}`:'—';
-  const presenceLabel=d.online===true?'Online':d.lastHeartbeat>0?'Offline':'Sem sinal';
-  return `<article class="card${asking?' asking':''}"><div class="card-top"><div><h3>${esc(d.name||'Sem nome do estacionamento')}</h3><div class="mac">MAC ${esc(d.mac)}</div></div><span class="badge b-${d.status}">${statusName[d.status]}</span></div>
-  <div><span class="badge b-${d.online===true?'active':'none'}">${presenceLabel}</span></div>
+  const memory=boardMemoryState(d);
+  return `<article class="card${asking?' asking':''}" data-license-board="${esc(d.mac)}"><div class="card-top"><div><h3>${esc(d.name||'Sem nome do estacionamento')}</h3><div class="mac">MAC ${esc(d.mac)}</div></div><span class="badge b-${d.status}">${statusName[d.status]}</span></div>
+  <div><span class="badge b-${d.online===true?'active':'none'}" data-license-presence>${licensePresenceLabel(d)}</span></div>
   ${asking?`<div class="ask">Pedindo acesso desde ${esc(when(d.requestedAt))}</div>`:''}
-  <dl class="facts"><dt>Liberada até</dt><dd>${until}${d.plan&&d.status==='active'?' · '+planName[d.plan]:''}</dd><dt>Último sinal</dt><dd>${esc(when(d.lastHeartbeat))}${d.version?' · v'+esc(d.version):''}</dd>${d.note?`<dt>Observação</dt><dd>${esc(d.note)}</dd>`:''}${d.hasCode?'':'<dt>Código</dt><dd>troca liberada (a próxima placa que conectar com este MAC fica registrada)</dd>'}</dl>
+  <dl class="facts"><dt>Liberada até</dt><dd>${until}${d.plan&&d.status==='active'?' · '+planName[d.plan]:''}</dd><dt>Último sinal</dt><dd data-license-signal>${esc(licenseLastSignal(d))}</dd>${d.note?`<dt>Observação</dt><dd>${esc(d.note)}</dd>`:''}${d.hasCode?'':'<dt>Código</dt><dd>troca liberada (a próxima placa que conectar com este MAC fica registrada)</dd>'}</dl>
   <div class="actions"><button class="primary" data-act="month" data-mac="${d.mac}">Liberar 1 mês</button><button class="primary" data-act="year" data-mac="${d.mac}">Liberar 1 ano</button><button data-act="days" data-mac="${d.mac}">Dias…</button></div>
-  <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button><button data-act="maintenance" data-mac="${d.mac}">Acesso e Wi-Fi</button>${d.backupReady===true?`<button type="button" data-act="backup" data-mac="${esc(d.mac)}">Backup</button>`:''}${d.firmwareReady===true?`<button data-act="firmware" data-mac="${esc(d.mac)}">Atualizar placa</button>`:''}${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div></article>`;
+  <div class="more"><button data-act="${d.blocked?'unblock':'block'}" data-mac="${d.mac}" class="${d.blocked?'':'danger'}">${d.blocked?'Desbloquear':'Bloquear agora'}</button><button data-act="edit" data-mac="${d.mac}">Editar</button><button data-act="maintenance" data-mac="${d.mac}">Acesso e Wi-Fi</button>${d.backupReady===true?`<button type="button" data-act="backup" data-mac="${esc(d.mac)}">Backup</button>`:''}${d.firmwareReady===true?`<button data-act="firmware" data-mac="${esc(d.mac)}">Atualizar placa</button>`:''}${d.hasCode?`<button data-act="reset" data-mac="${d.mac}">Liberar troca de código</button>`:''}<button class="danger" data-act="delete" data-mac="${d.mac}">Excluir</button></div>
+  <section class="board-memory" data-license-memory="${memory.key}">${boardMemoryContents(memory)}</section></article>`;
 }
 let target='',originalExpiryDate='';
 async function act(what,mac,btn){
