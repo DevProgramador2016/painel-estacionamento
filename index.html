@@ -206,6 +206,65 @@ footer a { color: var(--brand); white-space: nowrap; text-underline-offset: 2px;
 .operation-filters { padding: 12px; border: 1px solid var(--line); border-radius: 12px; margin: 0; min-width: 0; background: var(--surface-2); }
 .operation-period button, .operation-client-search button { min-height: 46px; }
 .operation-client-search button:not(.primary) { white-space: normal; }
+.people-list { border: 1px solid var(--line); border-radius: 15px; min-width: 0; overflow: hidden; }
+.people-list-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 16px; background: var(--surface-2); }
+.people-list-head :is(h3,p), .people-list .operation-heading p { margin: 0; }
+.people-list #people-count:not(:empty) { display: block; margin-top: 3px; }
+.people-list .operation-heading { padding: 0 16px; }
+.people-list .operation-heading:has(#people-message:empty):has(#people-cancel[hidden]) { display: none; }
+.people-list .operation-result { margin: 0; }
+.people-list .order-paging { padding: 12px 16px; }
+.people-tools, .people-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.people-tools { flex: 1 1 360px; justify-content: flex-end; }
+.people-search { flex: 0 1 245px; min-width: 140px; margin: 0; }
+.people-tools button { min-height: 42px; }
+.panel-plate { display: inline-grid; align-content: center; min-width: 89px; width: max-content; max-width: 100%; overflow: hidden; border: 2px solid #182235; border-radius: 7px; background: #fff; color: #151c25; box-shadow: 0 2px 0 #8495a6, 0 4px 7px #15233138; text-align: center; vertical-align: middle; white-space: nowrap; }
+.panel-plate small { display: block; padding: 1px 4px; background: linear-gradient(#3067dc,#1d399e); color: #fff; font-size: 8px; font-weight: 800; line-height: 1.2; letter-spacing: .16em; }
+.panel-plate b { display: block; padding: 3px 7px 4px; font: 800 16px/1.15 ui-monospace,Consolas,monospace; letter-spacing: .04em; }
+.panel-plate.is-volume small { background: linear-gradient(#f7c75c,#e49a1f); color: #172235; }
+.people-table { container-type: inline-size; }
+.people-table .badge { display: inline-block; max-width: 100%; white-space: nowrap; }
+.people-table .overview-table th:last-child { min-width: 216px; }
+.people-table .people-counts { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; }
+.people-counts button { display: grid; align-content: center; justify-items: center; padding: 5px; min-width: 0; min-height: 42px; white-space: normal; }
+.people-counts button span { color: var(--muted); font-size: .71rem; }
+.people-counts button strong { color: var(--brand); font-variant-numeric: tabular-nums; }
+.people-counts button:disabled { opacity: .75; }
+.people-phone { color: var(--brand); white-space: nowrap; }
+#people-attendance { width: min(700px,calc(100vw - 24px)); }
+.people-history-metrics, .people-history-list { display: grid; gap: 10px; padding: 0; }
+.people-history-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); margin: 0 0 16px; }
+.people-history-list { list-style: none; }
+.people-history-card, .people-history-metrics>div { border: 1px solid var(--line); border-radius: 11px; background: var(--surface-2); padding: 11px 12px; min-width: 0; }
+.people-history-card>header { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.people-history-card dl { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin: 8px 0 0; }
+.people-history-card :is(dt,small), .people-history-metrics dt { color: var(--muted); }
+.people-history-card dd, .people-history-metrics dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.people-history-metrics dd { font-weight: 800; }
+@media (max-width: 760px) {
+  .people-tools { justify-content: flex-start; }
+}
+@media (max-width: 700px) {
+  .people-table { padding: 10px; }
+}
+@container (max-width: 790px) {
+  .people-table .overview-table { padding: 0 8px; }
+  .people-table .overview-table, .people-table .overview-table tbody, .people-table .overview-table tr { display: block; width: 100%; }
+  .people-table .overview-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .people-table .overview-table tbody tr { padding: 9px 11px; margin-bottom: 9px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-2); }
+  .people-table .overview-table tbody td { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; column-gap: 10px; padding: 4px 0; border: 0; text-align: right; }
+  .people-table .overview-table tbody td::before { content: attr(data-label); color: var(--muted); font-size: 12.5px; }
+  .people-table .overview-table td > * { min-width: 0; }
+  .people-table .badge { white-space: normal; }
+  .people-table .overview-table tr>td:last-child { display: grid; text-align: start; }
+  .people-table .people-counts { width: 100%; }
+}
+@media (max-width: 440px) {
+  .people-tools { display: grid; grid-template-columns: minmax(0,1fr) auto; width: 100%; }
+  .people-filters { grid-column: 1 / -1; }
+  .people-search { min-width: 0; }
+  .people-history-card dl { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
 .operation-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(145px, 100%), 1fr)); gap: 10px; margin: 0 0 12px; }
 .operation-cards div { background: var(--surface-2); border: 1px solid var(--line); padding: 12px; border-radius: 11px; min-width: 0; }
 .operation-cards dt { font-size: 13px; color: var(--muted); }
@@ -800,6 +859,91 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
 #maintenance-owner-password { display:grid; justify-items:start; gap:6px; min-width:0; width:100%; }
 #maintenance-owner-password-result { display:grid; gap:4px; min-width:0; width:100%; }
 .operation-result details > div + div { margin-top:8px; }
+/* Relatórios do estacionamento */
+#area-movement #operation-views {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr));
+  gap: 7px;
+  justify-self: stretch;
+}
+#area-movement #operation-views button { min-height: 46px; padding-inline: 9px; white-space: normal; }
+#area-movement .motion-period-bar { align-items: end; gap: 8px; }
+#area-movement .motion-period-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+#area-movement .motion-period-tabs button { min-height: 38px; padding-inline: 9px; border-color: transparent; background: transparent; box-shadow: none; }
+#area-movement .motion-period-tabs button[aria-pressed="true"] { border-color: #a3cfbf; color: var(--brand); background: #fff; box-shadow: 0 1px 3px #152a4021; }
+#area-movement .motion-period-date { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 6px; }
+#area-movement .motion-period-date label { max-width: none; }
+#area-movement .motion-period-date button { width: 40px; padding: 0; font-size: 22px; }
+#area-movement .motion-period-bar > button { flex: 0 0 auto; width: auto; }
+#area-movement #motion-eye[aria-pressed="true"] { border-color: #a3cfbf; background: #e4f5ee; color: var(--brand); }
+#area-movement .motion-masked { display: none; letter-spacing: .11em; }
+#area-movement[data-values-hidden] .motion-shown { display: none; }
+#area-movement[data-values-hidden] .motion-masked { display: inline; }
+#area-movement #motion-result { display: grid; gap: 14px; }
+#area-movement .motion-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 0; }
+#area-movement .motion-summary > div { border-top: 3px solid var(--motion-tone, #93b7cd); padding: 12px; }
+#area-movement .motion-summary [data-motion-tone="received"] { --motion-tone: #48a989; }
+#area-movement .motion-summary [data-motion-tone="pending"] { --motion-tone: #d3a65b; }
+#area-movement .motion-summary [data-motion-tone="total"] { --motion-tone: #7499cd; }
+#area-movement .motion-summary dd { font-size: clamp(18px, 2.2vw, 26px); line-height: 1.25; }
+#area-movement .motion-summary small { display: block; margin-top: 5px; color: var(--muted); }
+#area-movement .motion-section { min-width: 0; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); box-shadow: var(--surface-shadow); }
+#area-movement .motion-section-head { display: grid; gap: 3px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+#area-movement .motion-section-head h3 { margin: 0; }
+#area-movement .motion-section-head p { margin: 0; color: var(--muted); font-size: 13px; }
+#area-movement .motion-section-foot { margin: 0; padding: 11px 16px; }
+#area-movement .motion-section > .empty { margin: 12px; }
+#area-movement .motion-section > h3 { margin: 14px 16px 8px; }
+#area-movement .motion-section > details { margin: 10px 12px; }
+#area-movement .motion-section > .operation-cards { margin: 12px; }
+#area-movement .motion-section .overview-table { margin: 0; border-inline: 0; border-radius: 0; box-shadow: none; }
+#area-movement .motion-section .overview-table th { text-transform: none; letter-spacing: 0; }
+#area-movement .motion-dimensions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 388px), 1fr)); gap: 14px; }
+#area-movement .motion-line-total { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px; font-variant-numeric: tabular-nums; }
+#area-movement .motion-line-total small { display: block; color: var(--muted); }
+#area-movement .motion-visit-facts { display: grid; justify-items: start; gap: 4px; min-width: 0; }
+#area-movement .motion-visit-note { border-inline-start: 2px solid #a3cfbf; padding-inline-start: 6px; overflow-wrap: anywhere; }
+#area-movement .motion-row-receipts { padding: 0; border: 0; }
+#area-movement .motion-row-receipts summary { color: var(--brand); font-size: 13px; }
+#area-movement .motion-row-receipts .operation-inline { justify-content: start; margin-top: 6px; }
+#area-movement .motion-passage { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 113px), 1fr)); gap: 5px 9px; margin: 0; text-align: start; }
+#area-movement .motion-passage dt { color: var(--muted); font-size: 12px; }
+#area-movement .motion-passage dd { margin: 0; font-weight: 650; }
+#area-movement .motion-older-passages { margin-top: 6px; padding: 6px; }
+#area-movement .motion-older-passages .motion-passage { margin-top: 6px; padding-top: 5px; border-top: 1px solid var(--line); }
+#area-movement .motion-chart { display: grid; grid-template-columns: repeat(var(--motion-columns), minmax(28px, 1fr)); gap: 5px; overflow-x: auto; min-width: 0; padding: 10px 12px 8px; }
+#area-movement .motion-chart button { display: grid; gap: 4px; min-width: 0; min-height: 84px; padding: 3px; border-color: transparent; background: transparent; box-shadow: none; }
+#area-movement .motion-chart button:hover { border-color: var(--line); }
+#area-movement .motion-chart-track { display: flex; align-items: end; height: 66px; border-radius: 5px; background: var(--surface-2); }
+#area-movement .motion-chart-track i { width: 100%; height: var(--motion-fill); border-radius: 5px 5px 3px 3px; background: linear-gradient(180deg,#4fb399,var(--brand)); }
+
+/* Vendas de licenças */
+#area-finance .finance-filters { padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+#area-finance .finance-overview { padding: 14px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); }
+#area-finance .finance-overview h3 { margin: 0 0 11px; }
+#area-finance .finance-metrics { gap: 10px; }
+#area-finance .finance-metrics > div { border-top: 3px solid #9cb4ca; min-width: 0; }
+#area-finance .finance-metrics > div:first-child { border-top-color: #48a989; }
+#area-finance .finance-metrics > div:nth-child(2) { border-top-color: #d88b8d; }
+#area-finance .finance-metrics > div:nth-child(4) { border-top-color: #d3a65b; }
+#area-finance .finance-metrics .finance-balance { border-top-color: #48a989; }
+#area-finance .finance-metrics dd, #area-finance .finance-plans dd { overflow-wrap: anywhere; }
+#area-finance .finance-daily, #area-finance .finance-ledger { padding: 14px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); }
+#area-finance #finance-status { margin-bottom: 8px; }
+#area-finance #finance-daily-result { margin-top: 10px; }
+@media (max-width: 700px) {
+  #area-movement .motion-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #area-movement .motion-section .overview-table { padding: 8px; }
+  #area-movement .motion-section .overview-table tbody tr:last-child { margin-bottom: 0; }
+  #area-movement .motion-section .overview-table td[data-label="Atendimento"] > *,
+  #area-movement .motion-section .overview-table td[data-label="Passagens"] > * { text-align: start; }
+}
+@media (max-width: 560px) {
+  #area-movement .motion-period-tabs, #area-movement .motion-period-date { flex: 1 1 100%; }
+  #area-movement .motion-period-bar > button { flex: 1 0 auto; min-height: 44px; padding-inline: 6px; }
+  #area-movement .motion-section-head, #area-movement .motion-section-foot { padding-inline: 11px; }
+  #area-finance :is(.finance-overview, .finance-daily, .finance-ledger, .finance-filters) { padding: 10px; }
+}
 </style>
 </head>
 <body>
@@ -825,14 +969,18 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
     </div></nav>
     <div class="operation-target" id="operation-target"><label>Placa do estabelecimento<select id="operation-device"><option value="">Selecione uma placa</option></select></label><p id="operation-capability" role="status"></p></div>
     <section class="overview" id="area-movement" role="tabpanel" aria-labelledby="area-tab-movement">
-      <div class="overview-top"><div><h2>Movimentação do estacionamento</h2><p>Consulte a placa selecionada. Os períodos seguem o horário de Brasília.</p></div></div>
+      <div class="overview-top"><div><h2>Relatórios</h2><p>Atendimentos e valores da placa selecionada, pelo horário de Brasília.</p></div></div>
       <div class="tabs operation-views" id="operation-views" role="group" aria-label="Relatórios de movimentação">
         <button type="button" data-motion="visits" aria-pressed="true">Atendimentos detalhados</button><button type="button" data-motion="plates" aria-pressed="false">Placas no período</button>
-        <button type="button" data-motion="summary" aria-pressed="false">Resumo</button><button type="button" data-motion="cash" aria-pressed="false">Caixa por data do pagamento</button><button type="button" data-motion="monthly-payments" aria-pressed="false">Mensalidades recebidas</button>
+        <button type="button" data-motion="summary" aria-pressed="false">Resumo</button><button type="button" data-motion="modes" aria-pressed="false">Por modalidade</button><button type="button" data-motion="cash" aria-pressed="false">Caixa por data do pagamento</button><button type="button" data-motion="monthly-payments" aria-pressed="false">Mensalidades recebidas</button>
       </div>
       <form id="motion-form">
-        <div class="operation-period"><label>Período<select name="period"><option value="day">Dia</option><option value="week">Semana</option><option value="month">Mês</option><option value="year">Ano</option></select></label>
-          <label>Data de referência<input name="date" type="date" min="2000-01-01" max="9999-12-31" required></label><button class="primary" id="motion-submit">Consultar</button></div>
+        <div class="operation-period motion-period-bar">
+          <select name="period" aria-label="Período" hidden><option value="day">Dia</option><option value="week">Semana</option><option value="month">Mês</option><option value="year">Ano</option></select>
+          <div class="motion-period-tabs" role="group" aria-label="Período do relatório"><button type="button" data-motion-period="day" aria-pressed="true">Dia</button><button type="button" data-motion-period="week" aria-pressed="false">Semana</button><button type="button" data-motion-period="month" aria-pressed="false">Mês</button><button type="button" data-motion-period="year" aria-pressed="false">Ano</button></div>
+          <div class="motion-period-date"><button type="button" data-motion-step="-1" aria-label="Período anterior">‹</button><label>Data de referência<input name="date" type="date" min="2000-01-01" max="9999-12-31" required></label><button type="button" data-motion-step="1" aria-label="Próximo período">›</button></div>
+          <button type="button" id="motion-today">Hoje</button><button type="button" id="motion-eye" aria-pressed="false">Ocultar valores</button><button class="primary" id="motion-submit">Consultar</button>
+        </div>
         <fieldset class="operation-filters" id="motion-filters">
           <label>Placa do veículo<input name="plate" placeholder="Ex.: ABC1D23" maxlength="8" autocomplete="off" autocapitalize="characters"></label>
           <label>Tipo<select name="type"><option value="">Todos</option><option>Carro</option><option>Moto</option><option>Utilitário</option><option>Guarda-volumes</option></select></label>
@@ -848,15 +996,23 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
       <div class="order-paging" id="motion-paging" hidden><button type="button" id="motion-prev">Anterior</button><span id="motion-page"></span><button type="button" id="motion-next">Próxima</button></div>
     </section>
     <section class="overview" id="area-people" role="tabpanel" aria-labelledby="area-tab-people" hidden>
-      <div class="overview-top"><div><h2>Clientes do estacionamento</h2><p>Veículos registrados e mensalistas da placa selecionada.</p></div></div>
-      <form class="operation-client-search" id="people-form">
-        <label>Cadastro<select name="scope"><option value="customers">Clientes e veículos</option><option value="monthly-plans">Mensalistas</option></select></label>
-        <label>Buscar<input name="search" type="search" maxlength="80" placeholder="Nome, modelo ou placa"></label><button class="primary" id="people-submit">Consultar</button>
-        <button type="button" id="people-export" disabled>Exportar todos os veículos (CSV)</button>
-      </form>
-      <div class="operation-heading"><p class="hint" id="people-message" role="status"></p><button type="button" id="people-cancel" hidden>Cancelar consulta</button></div>
-      <div class="operation-result" id="people-result"></div>
-      <div class="order-paging" id="people-paging" hidden><button type="button" id="people-prev">Anterior</button><span id="people-page"></span><button type="button" id="people-next">Próxima</button></div>
+      <div class="overview-top"><div><h2>Cadastros</h2><p>Clientes e veículos do estacionamento selecionado.</p></div><button type="button" id="people-export" disabled>Baixar cadastro (CSV)</button></div>
+      <div class="people-list">
+        <header class="people-list-head">
+          <div><h3>Clientes e veículos</h3><p class="hint" id="people-count"></p></div>
+          <form id="people-form" class="people-tools">
+            <div class="people-filters" role="group" aria-label="Tipo de cadastro">
+              <button type="button" data-people-filter="all" aria-pressed="true">Todos</button>
+              <button type="button" data-people-filter="monthly" aria-pressed="false">Mensalistas</button>
+            </div>
+            <label class="people-search"><input name="search" type="search" maxlength="80" placeholder="Buscar cadastro" aria-label="Buscar cadastro por nome, modelo ou placa"></label>
+            <button type="submit" id="people-submit">Buscar</button>
+          </form>
+        </header>
+        <div class="operation-heading"><p class="hint" id="people-message" role="status"></p><button type="button" id="people-cancel" hidden>Cancelar consulta</button></div>
+        <div class="operation-result" id="people-result"></div>
+        <div class="order-paging" id="people-paging" hidden><button type="button" id="people-prev">Anterior</button><span id="people-page"></span><button type="button" id="people-next">Próxima</button></div>
+      </div>
     </section>
     <section class="overview" id="area-finance" role="tabpanel" aria-labelledby="area-tab-finance" hidden>
       <div class="overview-top"><div><h2>Financeiro</h2><p>Vendas de licenças do estacionamento.</p></div><button type="button" id="finance-export" disabled>Exportar CSV</button></div>
@@ -865,7 +1021,8 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
         <label>Movimentações<select name="kind"><option value="all">Todas</option><option value="received">Recebimentos</option><option value="refunded">Estornos</option><option value="pending">Pendências</option><option value="expired">Pedidos vencidos</option></select></label>
         <button class="primary" type="submit">Consultar</button>
       </form>
-      <section class="finance-overview" id="finance-summary" aria-label="Resumo financeiro do mês" hidden>
+      <section class="finance-overview" id="finance-summary" aria-labelledby="finance-summary-title" hidden>
+        <h3 id="finance-summary-title">Visão geral do mês</h3>
         <dl class="finance-metrics" id="finance-metrics"></dl>
         <p class="hint">O saldo apurado desconta os estornos registrados. Taxas e repasses da InfinitePay ficam fora deste cálculo.</p>
         <dl class="finance-plans" id="finance-plans" aria-label="Receita confirmada por plano"></dl>
@@ -1011,7 +1168,7 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
 <footer><span>Sistema criado por Felipe Bruno</span><a href="tel:+5531985334434">(31) 98533-4434</a></footer>
 <dialog id="days-dialog"><form id="days-form"><h2>Liberar por dias</h2><p id="days-for" class="mac"></p><label>Quantos dias<input name="days" type="number" min="1" max="3660" step="1" value="15" required></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Liberar</button></div></form></dialog>
 <dialog id="edit-dialog"><form id="edit-form"><h2>Editar placa</h2><p id="edit-for" class="mac"></p><label>Observação (só aparece aqui)<input name="note" maxlength="200" placeholder="Ex.: cliente, telefone, forma de pagamento"></label><label>Liberada até<input name="date" type="date"></label><div class="dialog-actions"><button type="button" data-close>Cancelar</button><button class="primary">Salvar</button></div></form></dialog>
-<dialog id="firmware-confirm" aria-labelledby="firmware-confirm-title"><form id="firmware-confirm-form"><h2 id="firmware-confirm-title">Confirmar atualização</h2><p id="firmware-confirm-description"></p><p class="hint">A atualização pode reiniciar a placa. Se estiver sem internet, ela começará quando voltar a se conectar.</p><p class="hint error" id="firmware-confirm-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" id="firmware-confirm-cancel">Cancelar</button><button class="primary" id="firmware-confirm-send">Agendar atualização</button></div></form></dialog>
+<dialog id="firmware-confirm" aria-labelledby="firmware-confirm-title"><form id="firmware-confirm-form"><h2 id="firmware-confirm-title">Confirmar atualização</h2><p id="firmware-confirm-description"></p><p class="hint">As placas online recebem a atualização na próxima consulta. Para as placas offline, o agendamento fica salvo até voltarem à internet. Mantenha a placa ligada durante a instalação.</p><p class="hint error" id="firmware-confirm-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" id="firmware-confirm-cancel">Cancelar</button><button class="primary" id="firmware-confirm-send">Agendar atualização</button></div></form></dialog>
 <dialog id="billing-dialog" aria-labelledby="billing-title">
   <form id="billing-form" autocomplete="off">
     <div><h2 id="billing-title">Pagamentos da licença</h2><p class="hint">A placa oferece renovação pela InfinitePay quando a licença vence.</p></div>
@@ -1096,6 +1253,12 @@ body:has(#android-nav:not([hidden])) footer{padding-bottom:calc(var(--android-ba
   </div>
 </dialog>
 <div id="toast" role="status" hidden></div>
+<dialog id="people-attendance" aria-labelledby="people-attendance-title">
+  <header class="payments-header"><div><h2 id="people-attendance-title">Histórico de atendimentos</h2><p class="hint" id="people-attendance-vehicle"></p></div><button type="button" data-close aria-label="Fechar histórico">×</button></header>
+  <p class="hint" id="people-attendance-message" role="status"></p>
+  <div id="people-attendance-body"></div>
+  <div class="order-paging" id="people-attendance-paging" hidden><button type="button" id="people-attendance-prev">Anterior</button><span id="people-attendance-page"></span><button type="button" id="people-attendance-next">Próxima</button></div>
+</dialog>
 <dialog id="operation-receipt" class="remote-receipt" aria-labelledby="operation-receipt-title">
   <header class="payments-header"><h2 id="operation-receipt-title">Comprovante</h2><button type="button" data-close aria-label="Fechar comprovante">×</button></header>
   <p class="hint" id="operation-receipt-message" role="status"></p><div id="operation-receipt-body"></div>
@@ -2112,6 +2275,7 @@ function renderFirmwareBoards(){
   $('#firmware-update-all').disabled=!canQueue||!boards.some(board=>firmwareCandidate(board,release));
   const markup=boards.map(board=>{
     const job=firmware.jobs.get(board.mac),eligible=board.firmwareReady===true;
+    const online=board.online===true,hasPresence=typeof board.lastHeartbeat==='number'||typeof board.online==='boolean';
     const installed=firmwareVersionCode(board.version),incoming=firmwareVersionCode(release?.version);
     const [label,tone]=job&&firmwareStates[job.state]||(!eligible?['Prepare por USB','none']:
       release&&!Number.isFinite(installed)?['Versão não informada','none']:
@@ -2120,12 +2284,12 @@ function renderFirmwareBoards(){
     const progress=job?Math.max(0,Math.min(100,Number.isFinite(job.progress)?Math.trunc(job.progress):(job.state==='complete'?100:0))):0;
     return `<article class="card firmware-board" data-firmware-board="${esc(board.mac)}" tabindex="-1">
       <div class="card-top"><div><h3>${esc(registeredName(board))}</h3><p class="mac">MAC ${esc(board.mac)}</p></div><span class="badge b-${tone}">${label}</span></div>
-      <dl class="facts"><dt>Versão instalada</dt><dd>${esc(job?.state==='complete'&&(!Number.isFinite(installed)||firmwareVersionCode(job.version)>installed)?job.version:board.version||'—')}</dd><dt>Última conexão</dt><dd>${esc(when(board.lastSeen))}</dd>${job?.updatedAt?`<dt>Situação desde</dt><dd>${esc(orderDate(job.updatedAt))}</dd>`:''}</dl>
+      <dl class="facts"><dt>Conexão</dt><dd><span class="badge b-${online?'active':'none'}">${online?'Online':hasPresence?'Offline':'Sem sinal recente'}</span></dd><dt>Versão instalada</dt><dd>${esc(job?.state==='complete'&&(!Number.isFinite(installed)||firmwareVersionCode(job.version)>installed)?job.version:board.version||'—')}</dd><dt>Última conexão</dt><dd>${esc(when(board.lastHeartbeat||board.lastSeen))}</dd>${job?.updatedAt?`<dt>Situação desde</dt><dd>${esc(orderDate(job.updatedAt))}</dd>`:''}</dl>
       ${job?`<div class="firmware-progress"><progress max="100" value="${progress}" aria-label="Progresso da atualização"></progress><span>${progress}%</span></div>`:''}
-      ${job?.state==='queued'?'<p class="hint">A placa começará quando se conectar à internet.</p>':''}
+      ${job?.state==='queued'?`<p class="hint">${online?'Agendada. A placa recebe na próxima consulta.':'Agendada. Começa automaticamente quando a placa voltar à internet.'}</p>`:''}
       ${job?.state==='failed'&&job.error?`<p class="hint error">${esc(job.error)}</p>`:''}
       ${!eligible?'<p class="hint">Prepare esta placa uma vez pelo USB para habilitar a atualização pelo painel.</p>':''}
-      ${eligible?`<div class="more"><button type="button" data-firmware-update="${esc(board.mac)}" ${canQueue&&firmwareCandidate(board,release)?'':'disabled'}>${job?.state==='failed'?'Agendar novamente':'Atualizar placa'}</button></div>`:''}
+      ${eligible?`<div class="more"><button type="button" data-firmware-update="${esc(board.mac)}" ${canQueue&&firmwareCandidate(board,release)?'':'disabled'}>${job?.state==='failed'?'Agendar novamente':online?'Atualizar placa':'Agendar para reconexão'}</button></div>`:''}
       </article>`;
   }).join('')||'<p class="empty">Nenhuma placa cadastrada.</p>';
   if(firmware.boardMarkup===markup)return;
@@ -2546,7 +2710,8 @@ const areaButtons=[...document.querySelectorAll('[data-area]')];
 const boardSelect=$('#operation-device'),motionForm=$('#motion-form'),peopleForm=$('#people-form');
 const remoteReceipt=$('#operation-receipt');
 const motion={mode:'visits',query:null,page:0,seq:0,loading:false};
-const people={query:null,page:0,seq:0,loading:false};
+const people={query:null,page:0,seq:0,loading:false,filter:'all',items:[]};
+const attendanceDialog=$('#people-attendance');
 const remoteQueues=new Map();
 const wait=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds));
 const noOperation=Symbol('cancelled operation');
@@ -2575,8 +2740,11 @@ function operationReadiness(){
     'A partir da versão 0.19.5, o processador habilita as consultas ao sincronizar pela internet. Em versões anteriores, use Configurações → Painel remoto → Autorizar consultas no processador, se a opção estiver disponível.';
   status.classList.toggle('error',!!board&&!ready);
   $('#motion-submit').disabled=!ready||motion.loading;
+  motionForm.querySelectorAll('[data-motion-period], [data-motion-step], #motion-today').forEach(button=>{button.disabled=motion.loading;});
   $('#people-submit').disabled=!ready||people.loading;
-  $('#people-export').disabled=!ready||people.loading||peopleForm.elements.scope.value!=='customers';
+  $('#people-export').disabled=!ready||people.loading;
+  peopleForm.querySelectorAll('[data-people-filter]').forEach(button=>{button.disabled=!ready;});
+  peopleForm.elements.search.disabled=!ready;
   $('#motion-cancel').hidden=!motion.loading;
   $('#people-cancel').hidden=!people.loading;
 }
@@ -2584,6 +2752,10 @@ function resetOperation(key,text=''){
   const state=operationState(key);
   state.seq++;state.loading=false;state.query=null;state.page=0;
   $(`#${key}-result`).replaceChildren();$(`#${key}-paging`).hidden=true;
+  if(key==='people'){
+    state.items=[];$('#people-count').textContent='';
+    if(attendanceDialog.open)attendanceDialog.close();
+  }
   operationMessage(key,text);operationReadiness();
 }
 function refreshRemoteDevices(){
@@ -2603,10 +2775,12 @@ function refreshRemoteDevices(){
   }
   if(!motionForm.elements.date.value)motionForm.elements.date.value=editDate(serverTime||Math.floor(Date.now()/1000));
   operationReadiness();
+  if(former!==boardSelect.value)beginBoardOperation();
 }
 boardSelect.onchange=()=>{
   resetOperation('motion');resetOperation('people');
   if(remoteReceipt.open)remoteReceipt.close();
+  beginBoardOperation();
 };
 function showArea(area){
   if(area===activeArea)return;
@@ -2623,6 +2797,7 @@ function showArea(area){
   $('#operation-target').hidden=area==='licenses'||area==='finance';
   if(area==='licenses')showOverview(overview);
   if(area==='finance')loadFinance();
+  beginBoardOperation();
   operationReadiness();
 }
 for(const [index,button] of areaButtons.entries()){
@@ -2718,6 +2893,21 @@ function motionFilters(){
 function reportCards(stats){
   return `<dl class="operation-cards">${stats.map(([label,value])=>`<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>`;
 }
+function motionSection(title,content,description=''){
+  return `<section class="motion-section"><header class="motion-section-head"><h3>${title}</h3>${description?`<p>${description}</p>`:''}</header>${content}</section>`;
+}
+function motionMoney(cents){
+  return `<span class="motion-private"><span class="motion-shown">${brl(cents)}</span><span class="motion-masked" aria-label="Valor oculto">•••</span></span>`;
+}
+function motionTotals(stats){
+  const entries=countValue(stats.entries),exits=countValue(stats.exits),amount=countValue(stats.amount);
+  const cards=[['received','Recebido por estadia',motionMoney(stats.paid),'Pela data de entrada'],
+    ['pending','A receber',motionMoney(stats.pending),'Estadias pendentes'],
+    ['count','Atendimentos',entries,`${exits} ${exits===1?'encerrado':'encerrados'}`],
+    ['total','Valor total',motionMoney(amount),entries?`Média de ${motionMoney(Math.round(amount/entries))}`:'Sem movimento']];
+  return `<dl class="operation-cards motion-summary" aria-label="Resumo do período">${cards.map(([tone,label,value,caption])=>
+    `<div data-motion-tone="${tone}"><dt>${label}</dt><dd>${value}</dd><small>${caption}</small></div>`).join('')}</dl>`;
+}
 
 const countValue=value=>Number.isSafeInteger(value)?value:0;
 const labelOf=(labels,key,fallback='—')=>Object.hasOwn(labels,key)?labels[key]:fallback;
@@ -2725,7 +2915,7 @@ const receiptActions=v=>Number.isSafeInteger(v.id)&&v.id>0?`<div class="operatio
   `<button type="button" data-visit-id="${v.id}" data-visit-day="${esc(v.day)}" data-receipt-kind="exit">Saída</button>`:''}</div>`:'—';
 function visitTariff(v){
   if(v.billing==='fraction'&&Number.isInteger(v.fractionPrice)&&Number.isInteger(v.fractionMinutes)&&v.fractionMinutes>0)
-    return `${brl(v.fractionPrice)} / ${v.fractionMinutes} min${Number.isInteger(v.dailyPrice)?` · limite ${brl(v.dailyPrice)}`:''}`;
+    return `${brl(v.fractionPrice)} / ${v.fractionMinutes} min${!v.fractionUncapped&&Number.isInteger(v.dailyPrice)?` · limite ${brl(v.dailyPrice)}`:''}`;
   if(v.billing!=='monthly'&&v.billing!=='fraction'&&Number.isInteger(v.dailyPrice))return `Tarifa ${brl(v.dailyPrice)}`;
   return '';
 }
@@ -2733,6 +2923,11 @@ function elapsed(start,end){
   if(!(start>0&&end>=start))return '';
   const n=end-start;
   return [Math.floor(n/3600),Math.floor(n%3600/60),n%60].map(value=>String(value).padStart(2,'0')).join(':');
+}
+function visitModality(visit){
+  if(visit.billing==='fraction'&&visit.fractionUncapped)return 'Fração ilimitada';
+  if(visit.type==='Guarda-volumes'&&visit.billing==='daily')return 'Valor fixo';
+  return labelOf(modeNames,visit.modality,visit.stayLabel||'Sem modalidade identificada');
 }
 function visitExit(v){
   if(!v.cancelledAt)return v.out?esc(orderDate(v.out)):'Em andamento';
@@ -2754,30 +2949,43 @@ function visitCorrections(visit){
 }
 function visitRow(v){
   const covered=v.modality==='monthly'||v.billing==='monthly';
-  const method=labelOf(methodNames,v.payment),billing=labelOf(modeNames,v.modality,v.stayLabel||'Sem modalidade identificada');
-  const rate=visitTariff(v),duration=elapsed(v.in,v.out);
-  return `<tr><td data-label="Veículo"><div><strong>${esc(v.plate)}</strong><small>${esc([v.type,v.model].filter(Boolean).join(' · '))}</small><small>${esc(v.name)}</small></div></td>
+  const method=labelOf(methodNames,v.payment),billing=visitModality(v);
+  const rate=visitTariff(v),end=Number.isSafeInteger(v.elapsed)&&v.elapsed>=0?v.in+v.elapsed:v.out||v.cancelledAt||serverTime;
+  const duration=elapsed(v.in,end);
+  const identity=[v.name,v.model].filter((value,index,values)=>value&&values.indexOf(value)===index).join(' · ');
+  const receipts=receiptActions(v);
+  return `<tr><td data-label="Atendimento"><div class="motion-visit-facts">${panelPlate(v.plate,v.type==='Guarda-volumes')}${identity?`<strong>${esc(identity)}</strong>`:''}
+    <small>#${countValue(v.id)} · ${esc(v.type||'Categoria não registrada')} · ${v.shift===1?'Dia':'Noite'}</small>${v.note?`<small class="motion-visit-note"><b>Observação</b> ${esc(v.note)}</small>`:''}
+    ${receipts==='—'?'':`<details class="motion-row-receipts"><summary>Comprovantes</summary>${receipts}</details>`}</div></td>
     <td data-label="Entrada"><div><strong>${esc(orderDate(v.in))}</strong><small>${v.shift?`Horário ${countValue(v.shift)}`:''}</small></div></td>
-    <td data-label="Saída"><div><strong>${visitExit(v)}</strong>${duration?`<small>Permanência ${duration}</small>`:''}${!v.out&&!v.cancelledAt&&v.due?`<small>Retirada até ${esc(orderDate(v.due))}</small>`:''}${v.cancelReason?`<small>${esc(v.cancelReason)}</small>`:''}${v.cancelledBy?`<small>Operador ${esc(v.cancelledBy)}</small>`:''}</div></td>
-    <td data-label="Modalidade"><div><strong>${esc(billing)}</strong>${rate?`<small>${esc(rate)}</small>`:''}</div></td>
-    <td data-label="Pagamento" class="num"><div><strong>${v.cancelledAt&&!v.refundedAt?'Sem cobrança':covered?'Incluído':brl(v.price)}</strong>${!v.cancelledAt||v.refundedAt?`<small>${method}</small>`:''}${v.paidAt?`<small>${esc(orderDate(v.paidAt))}</small>`:''}${visitRefund(v)}${visitCorrections(v)}</div></td>
-    <td data-label="Comprovantes">${receiptActions(v)}</td></tr>`;
+    <td data-label="Saída e permanência"><div><strong>${visitExit(v)}</strong>${duration?`<small>Permanência ${duration}</small>`:''}${!v.out&&!v.cancelledAt&&v.due?`<small>Retirada até ${esc(orderDate(v.due))}</small>`:''}${v.cancelReason?`<small>${esc(v.cancelReason)}</small>`:''}${v.cancelledBy?`<small>Operador ${esc(v.cancelledBy)}</small>`:''}</div></td>
+    <td data-label="Cobrança"><div><strong>${esc(billing)}</strong>${rate?`<small>${esc(rate)}</small>`:''}</div></td>
+    <td data-label="Pagamento" class="num"><div><strong>${v.cancelledAt&&!v.refundedAt?'Sem cobrança':covered?'Incluído':brl(v.price)}</strong>${!v.cancelledAt||v.refundedAt?`<small>${method}${!v.out&&!v.cancelledAt&&v.billing==='fraction'?' · valor parcial':''}</small>`:''}${v.paidAt?`<small>Recebido ${esc(orderDate(v.paidAt))}</small>`:''}${visitRefund(v)}${visitCorrections(v)}</div></td></tr>`;
 }
-function visitStats(stats){
-  return reportCards([['Atendimentos',countValue(stats.entries)],['Encerrados',countValue(stats.exits)],['Recebido por estadia',brl(stats.paid)],['A receber',brl(stats.pending)],['Valor total',brl(stats.amount)],...(Number.isSafeInteger(stats.cancelled)?[['Cancelados',stats.cancelled]]:[])]);
+const motionModeNames={fraction:'Fração horária',daily:'Diária',overnight:'Pernoite',monthly:'Mensalistas',locker:'Guarda-volumes',other:'Outras modalidades'};
+function renderVisitModes(breakdown){
+  const modes=breakdown?.modality||breakdown?.billing||{};
+  const rows=Object.entries(motionModeNames).filter(([key],index)=>index<4||countValue(modes[key]?.entries)).map(([key,label])=>{
+    const group=modes[key]||{};
+    return `<tr><td data-label="Modalidade">${label}</td><td data-label="Atendimentos" class="num">${countValue(group.entries)}</td><td data-label="Recebido" class="num">${key==='monthly'?'Incluído':brl(group.paid)}</td><td data-label="A receber" class="num">${key==='monthly'?'—':brl(group.pending)}</td></tr>`;
+  }).join('');
+  return motionSection('Por modalidade',overviewTable([['Modalidade'],['Atendimentos',true],['Recebido',true],['A receber',true]],rows),'Atendimentos e valores das estadias.');
 }
 function visitBreakdown(breakdown){
   if(!breakdown)return '';
-  return `<details><summary>Totais do filtro por modalidade, tipo e horário</summary>${[
-    ['Modalidade',breakdown.billing,modeNames],['Tipo',breakdown.type,{other:'Outros'}],['Horário',breakdown.shift,{'1':'Horário 1','2':'Horário 2'}],
-  ].map(([title,rows,names])=>`<h3>${title}</h3>${overviewTable([['Grupo'],['Atendimentos',true],['Recebido',true],['A receber',true]],
-    Object.entries(rows||{}).map(([key,value])=>`<tr><td data-label="Grupo"><strong>${esc(labelOf(names,key,key))}</strong></td>
-    <td data-label="Atendimentos" class="num">${countValue(value.entries)}</td><td data-label="Recebido" class="num">${brl(value.paid)}</td><td data-label="A receber" class="num">${brl(value.pending)}</td></tr>`).join(''))}`).join('')}</details>`;
+  return `<div class="motion-dimensions">${[
+    ['Por tipo','Tipo',breakdown.type,{other:'Outros'}],['Por horário','Horário',breakdown.shift,{'1':'Horário 1','2':'Horário 2'}],
+  ].map(([title,column,rows,names])=>motionSection(title,overviewTable([[column],['Qtd.',true],['Recebido',true],['A receber',true]],
+    Object.entries(rows||{}).map(([key,value])=>`<tr><td data-label="${column}"><strong>${esc(labelOf(names,key,key))}</strong></td>
+    <td data-label="Qtd." class="num">${countValue(value.entries)}</td><td data-label="Recebido" class="num">${brl(value.paid)}</td><td data-label="A receber" class="num">${brl(value.pending)}</td></tr>`).join('')))).join('')}</div>`;
 }
 function renderVisits(data){
-  const table=data.items.length?overviewTable([['Veículo'],['Entrada'],['Saída'],['Modalidade'],['Pagamento',true],['Comprovantes']],data.items.map(visitRow).join('')):
+  const table=data.items.length?overviewTable([['Atendimento'],['Entrada'],['Saída e permanência'],['Cobrança'],['Pagamento',true]],data.items.map(visitRow).join('')):
     '<p class="empty">Nenhum atendimento com estes filtros.</p>';
-  return visitStats(data.stats)+table+visitBreakdown(data.breakdown);
+  const cancelled=countValue(data.stats.cancelled);
+  const detail=table+(cancelled?`<p class="motion-section-foot hint">${cancelled} ${cancelled===1?'atendimento cancelado':'atendimentos cancelados'} no período.</p>`:'');
+  return motionTotals(data.stats)+motionSection('Atendimentos detalhados',detail,'Entrada, saída, permanência, tarifa e pagamento por atendimento.')+
+    (data.breakdown?renderVisitModes(data.breakdown)+visitBreakdown(data.breakdown):'');
 }
 async function allPages(op,params,context,caption,defaultPageSize){
   const entries=[],known=new Set();
@@ -2803,27 +3011,31 @@ async function allPages(op,params,context,caption,defaultPageSize){
   }
 }
 function renderPlatePassage(visit){
-  const mode=labelOf(modeNames,visit.modality,visit.stayLabel||'Não identificada');
-  return `<div><strong>${esc(mode)}</strong><small>Entrada ${esc(orderDate(visit.in))}</small><small>${visit.cancelledAt?'':'Saída '}${visitExit(visit)}</small>${visitRefund(visit)}</div>`;
+  return `<dl class="motion-passage"><div><dt>Modalidade</dt><dd>${esc(visitModality(visit))}</dd></div>
+    <div><dt>Entrada</dt><dd>${esc(orderDate(visit.in))}</dd></div><div><dt>Saída</dt><dd>${visitExit(visit)}</dd></div></dl>`;
 }
 function renderPlateGroups(items){
   const groups=new Map();
   for(const item of items){
+    if(item.cancelledAt)continue;
     const plate=item.type==='Guarda-volumes'?'Guarda-volumes':item.plate;
     if(!groups.has(plate))groups.set(plate,{plate,visits:[],total:0,count:0});
     const group=groups.get(plate);
     group.visits.push(item);
-    if(!item.cancelledAt){group.total+=item.price;group.count++;}
+    group.total+=item.price;group.count++;
   }
   const list=[...groups.values()].sort((a,b)=>b.total-a.total||a.plate.localeCompare(b.plate));
-  if(!list.length)return '<p class="empty">Nenhuma placa com estes filtros.</p>';
+  if(!list.length)return motionSection('Placas no período','<p class="empty">Nenhuma placa com estes filtros.</p>');
   const rows=list.map(group=>{
     group.visits.sort((a,b)=>b.in-a.in||b.id-a.id);
     const [latest,...older]=group.visits;
-    return `<tr><td data-label="Placa"><strong>${esc(group.plate)}</strong></td><td data-label="Passagens">${renderPlatePassage(latest)}${older.length?`<details><summary>Ver mais ${older.length} ${older.length===1?'passagem':'passagens'}</summary>${older.map(renderPlatePassage).join('')}</details>`:''}</td>
+    return `<tr><td data-label="Placa">${group.plate==='Guarda-volumes'?'<span class="badge">Guarda-volumes</span>':panelPlate(group.plate)}</td><td data-label="Passagens">${renderPlatePassage(latest)}${older.length?`<details class="motion-older-passages"><summary>Ver mais ${older.length} ${older.length===1?'passagem':'passagens'}</summary>${older.map(renderPlatePassage).join('')}</details>`:''}</td>
       <td data-label="Vezes" class="num">${group.count}</td><td data-label="Valor" class="num">${brl(group.total)}</td></tr>`;
   }).join('');
-  return overviewTable([['Placa'],['Passagens'],['Vezes',true],['Valor',true]],rows)+reportCards([['Valor total',brl(list.reduce((sum,group)=>sum+group.total,0))]]);
+  const total=list.reduce((sum,group)=>sum+group.total,0);
+  return motionSection('Placas no período',overviewTable([['Placa'],['Passagens'],['Vezes',true],['Valor',true]],rows)+
+    `<div class="motion-section-foot motion-line-total"><span>Valor total · ${list.reduce((sum,group)=>sum+group.count,0)} passagens</span><strong>${brl(total)}</strong></div>`,
+    'Modalidade, entrada e saída de cada passagem, com o total por placa.');
 }
 const addValues=(a,b)=>a+(Number.isFinite(b)?b:0);
 const centsSum=value=>Array.isArray(value)?value.reduce(addValues,0):0;
@@ -2847,19 +3059,43 @@ function summaryDimensions(periods){
     ['Por tipo',['Carros e utilitários','Motos','Guarda-volumes'],(period,index)=>[period.n?.[index],period.paid?.[index],period.pend?.[index]]],
     ['Por horário',['Horário 1','Horário 2'],(period,index)=>period.s?.[index]],
   ];
-  return tables.map(([title,labels,amounts])=>`<h3>${title}</h3>`+overviewTable([['Grupo'],['Atendimentos',true],['Recebido',true],['A receber',true]],labels.map((label,index)=>{
+  return `<div class="motion-dimensions">${tables.map(([title,labels,amounts])=>{
+    const column=title==='Por tipo'?'Tipo':'Horário';
+    return motionSection(title,overviewTable([[column],['Qtd.',true],['Recebido',true],['A receber',true]],labels.map((label,index)=>{
     const [count,paid,pending]=periods.reduce((total,period)=>{const values=amounts(period,index);return total.map((value,key)=>addValues(value,values?.[key]));},[0,0,0]);
-    return `<tr><td data-label="Grupo"><strong>${label}</strong></td><td data-label="Atendimentos" class="num">${count}</td><td data-label="Recebido" class="num">${brl(paid)}</td><td data-label="A receber" class="num">${brl(pending)}</td></tr>`;
-  }).join(''))).join('');
+    return `<tr><td data-label="${column}"><strong>${label}</strong></td><td data-label="Qtd." class="num">${count}</td><td data-label="Recebido" class="num">${brl(paid)}</td><td data-label="A receber" class="num">${brl(pending)}</td></tr>`;
+    }).join('')));
+  }).join('')}</div>`;
 }
-function renderDailySummary(daily,yearView,periods){
+function motionTimeChart(rows,yearView,{from,to}){
+  if(from===to)return '';
+  const byDate=new Map(rows.map(row=>[row.day,row]));
+  const data=[];
+  const cursor=new Date(from+'T12:00:00Z');
+  const end=Date.parse(to+'T12:00:00Z');
+  while(cursor.getTime()<=end){
+    const day=isoDay(cursor);
+    data.push(byDate.get(day)||{day,entries:0,paid:0,pending:0});
+    if(yearView)cursor.setUTCMonth(cursor.getUTCMonth()+1);
+    else cursor.setUTCDate(cursor.getUTCDate()+1);
+  }
+  const max=Math.max(1,...data.map(row=>row.paid+row.pending));
+  return `<div class="motion-chart" aria-label="Movimento ${yearView?'por mês':'por dia'}" style="--motion-columns:${data.length}">${data.map(row=>{
+    const amount=row.paid+row.pending;
+    const name=`${displayPeriod(row.day,yearView)} · ${row.entries} ${row.entries===1?'entrada':'entradas'} · ${brl(amount)}`;
+    return `<button type="button" data-motion-chart-date="${esc(row.day)}" data-motion-chart-period="${yearView?'month':'day'}" aria-label="${esc(name)}" title="${esc(name)}"><span class="motion-chart-track"><i style="--motion-fill:${Math.round(amount/max*100)}%"></i></span><small>${yearView?row.day.slice(5,7):row.day.slice(8)}</small></button>`;
+  }).join('')}</div>`;
+}
+function renderDailySummary(daily,yearView,periods,range){
   const total=daily.reduce((a,b)=>({entries:a.entries+b.entries,exits:a.exits+b.exits,paid:a.paid+b.paid,pending:a.pending+b.pending}),{entries:0,exits:0,paid:0,pending:0});
-  const cards=visitStats({...total,amount:total.paid+total.pending});
+  const cards=motionTotals({...total,amount:total.paid+total.pending});
   if(!daily.length)return cards+'<p class="empty">Sem movimentação no período.</p>';
   const rows=groupDates(daily,yearView,['entries','exits','paid','pending']);
-  return cards+summaryDimensions(periods)+overviewTable([[yearView?'Mês':'Dia'],['Atendimentos',true],['Encerrados',true],['Recebido por estadia',true],['A receber',true]],rows.map(row=>`<tr>
-    <td data-label="Período"><strong>${displayPeriod(row.day,yearView)}</strong></td><td data-label="Atendimentos" class="num">${row.entries}</td>
-    <td data-label="Encerrados" class="num">${row.exits}</td><td data-label="Recebido por estadia" class="num">${brl(row.paid)}</td><td data-label="A receber" class="num">${brl(row.pending)}</td></tr>`).join(''));
+  const table=overviewTable([[yearView?'Mês':'Dia'],['Entradas',true],['Recebido',true],['A receber',true]],rows.map(row=>`<tr>
+    <td data-label="${yearView?'Mês':'Dia'}"><strong>${displayPeriod(row.day,yearView)}</strong></td><td data-label="Entradas" class="num">${row.entries}</td>
+    <td data-label="Recebido" class="num">${brl(row.paid)}</td><td data-label="A receber" class="num">${brl(row.pending)}</td></tr>`).join(''));
+  return cards+summaryDimensions(periods)+motionSection(yearView?'Movimento por mês':'Movimento por dia',motionTimeChart(rows,yearView,range)+table,
+    range.from===range.to?'':'Toque em uma coluna para abrir o relatório do período.');
 }
 const paymentMethods=['cash','pix','card'];
 const moneyCards=(totals,last='Recebido no período')=>reportCards([...paymentMethods.map(method=>[methodNames[method],brl(totals[method])]),[last,brl(totals.total)]]);
@@ -2869,7 +3105,7 @@ function sumMethods(group){
 function cashRefundMetrics(refunds,net){
   return refunds&&net?reportCards([['Estornos',brl(refunds.total)],['Saldo líquido',brl(net.total)]]):'';
 }
-function renderPeriodCash(chunks,yearView){
+function renderPeriodCash(chunks,yearView,range){
   const received=sumMethods(chunks.map(chunk=>chunk.received));
   const parking=sumMethods(chunks.map(chunk=>chunk.parking)),monthly=sumMethods(chunks.map(chunk=>chunk.monthly));
   const hasRefunds=chunks.some(chunk=>chunk.refunds&&chunk.net);
@@ -2879,7 +3115,16 @@ function renderPeriodCash(chunks,yearView){
   const table=days.length?overviewTable([[yearView?'Mês':'Dia'],['Dinheiro',true],['Pix',true],['Cartão',true],['Recebido',true],...(hasRefunds?[['Estornos',true],['Saldo líquido',true]]:[])],days.map(row=>`<tr>
     <td data-label="Período"><div><button type="button" data-open-cash-date="${esc(row.day)}" data-open-cash-period="${yearView?'month':'day'}">${displayPeriod(row.day,yearView)}</button>${yearView?'':`<small>${row.closed?'Fechado':row.opened?'Aberto':'Sem abertura'}</small>`}</div></td>
     ${paymentMethods.map(method=>`<td data-label="${methodNames[method]}" class="num">${brl(row[method])}</td>`).join('')}<td data-label="Recebido" class="num">${brl(row.total)}</td>${hasRefunds?`<td data-label="Estornos" class="num">${brl(row.refund)}</td><td data-label="Saldo líquido" class="num">${brl(row.net)}</td>`:''}</tr>`).join('')):'<p class="empty">Sem movimentação no período.</p>';
-  return moneyCards(received)+cashRefundMetrics(refunds,net)+`<p class="hint">Estadias ${brl(parking.total)} · Mensalidades ${brl(monthly.total)}. Valores pela data do pagamento.</p>`+table;
+  const today=editDate(serverTime||Math.floor(Date.now()/1000));
+  const focusDay=today>=range.from&&today<=range.to?today:range.to;
+  const categoryRows=[['Estadias',parking],['Mensalidades',monthly],['Total',received]].map(([label,amounts])=>`<tr><td data-label="Origem"><strong>${label}</strong></td>
+    ${paymentMethods.map(method=>`<td data-label="${methodNames[method]}" class="num">${brl(amounts[method])}</td>`).join('')}<td data-label="Total" class="num">${brl(amounts.total)}</td></tr>`).join('');
+  const methodsTable=overviewTable([['Origem'],['Dinheiro',true],['Pix',true],['Cartão',true],['Total',true]],categoryRows);
+  return motionSection('Caixa por data do pagamento',`<div class="motion-section-foot motion-line-total"><div><strong>${brl(received.total)}</strong><small>Recebido no período</small></div>
+    <button type="button" data-open-cash-date="${esc(focusDay)}" data-open-cash-period="day">Conferir caixa</button></div>`+
+    (hasRefunds&&refunds.total?`<div class="motion-section-foot hint">Estornos ${brl(refunds.total)} · Líquido ${brl(net.total)}</div>`:'')+methodsTable+
+    `<details class="motion-cash-history"><summary>Recebimentos ${yearView?'por mês':'por dia'}</summary>${table}</details>`,
+  'Pagamentos registrados na data em que foram recebidos.');
 }
 function renderCashDay(data){
   const{received,parking,monthly,opening,deposits,withdrawals,closing}=data;
@@ -2894,24 +3139,68 @@ function renderCashDay(data){
     <td data-label="Placa e cliente"><div><strong>${esc(item.plate)}</strong><small>${esc(item.name)}</small></div></td><td data-label="Estornado em">${esc(orderDate(item.refundedAt))}</td>
     <td data-label="Origem">${item.monthly?'Mensalidade':item.type==='Guarda-volumes'?'Guarda-volumes':'Estadia'}</td>
     <td data-label="Forma do estorno"><div>${labelOf(refundMethodNames,item.refundMethod)}${item.refundedBy||item.cancelledBy?`<small>Operador ${esc(item.refundedBy||item.cancelledBy)}</small>`:''}${item.refundReason||item.cancelReason?`<small>${esc(item.refundReason||item.cancelReason)}</small>`:''}</div></td><td data-label="Valor" class="num">${brl(item.refundAmount)}</td></tr>`).join('')):'';
-  return moneyCards(received,'Recebido no dia')+cashRefundMetrics(data.refunds,data.net)+`<p class="hint">Estadias ${brl(parking.total)} · Mensalidades ${brl(monthly.total)}</p>
-    <p class="hint">${data.closed?'Caixa fechado':data.opened?'Caixa aberto':'Caixa sem abertura'} · Fundo inicial ${brl(opening)} · Suprimentos ${brl(deposits)} · Sangrias ${brl(withdrawals)}</p>`+conference+rows+refunds;
+  return moneyCards(received,'Recebido no dia')+cashRefundMetrics(data.refunds,data.net)+motionSection('Caixa por data do pagamento',
+    `<p class="motion-section-foot hint">Estadias ${brl(parking.total)} · Mensalidades ${brl(monthly.total)}</p>
+    <p class="motion-section-foot hint">${data.closed?'Caixa fechado':data.opened?'Caixa aberto':'Caixa sem abertura'} · Fundo inicial ${brl(opening)} · Suprimentos ${brl(deposits)} · Sangrias ${brl(withdrawals)}</p>`+conference+rows+refunds);
 }
 function renderInstallments(data){
-  const rows=data.items.length?overviewTable([['Placa e mensalista'],['Recebido em'],['Pagamento'],['Vencimento renovado'],['Valor',true]],data.items.map(row=>`<tr>
-    <td data-label="Placa e mensalista"><div><strong>${esc(row.plate)}</strong><small>${esc(row.name)}</small></div></td><td data-label="Recebido em">${esc(orderDate(row.paidAt))}</td>
-    <td data-label="Pagamento">${labelOf(methodNames,row.payment)}</td><td data-label="Vencimento renovado"><div><strong>${brDay(row.toDue)}</strong><small>Anterior ${brDay(row.fromDue)}</small>${row.dueRestored&&row.dueAfterRefund?`<small>Restaurado para ${brDay(row.dueAfterRefund)}</small>`:''}</div></td>
-    <td data-label="Valor" class="num"><div><strong>${brl(row.amount)}</strong>${row.refundedAt?`<small>Estorno ${brl(row.refundAmount)} · ${labelOf(refundMethodNames,row.refundMethod)}</small><small>${esc(orderDate(row.refundedAt))}</small>${row.refundedBy?`<small>Operador ${esc(row.refundedBy)}</small>`:''}${row.refundReason?`<small>${esc(row.refundReason)}</small>`:''}`:''}</div></td></tr>`).join('')):'<p class="empty">Nenhuma mensalidade recebida no período.</p>';
-  return reportCards([['Mensalidades recebidas',countValue(data.total)],['Valor recebido',brl(data.amount)],...(Number.isSafeInteger(data.refunded)?[['Estornos',brl(data.refunded)],['Saldo líquido',brl(data.net)]]:[])])+rows;
+  const rows=data.items.length?overviewTable([['Mensalista'],['Recebido em'],['Forma'],['Valor',true],['Estorno']],data.items.map(row=>{
+    const months=countValue(row.months)||1;
+    return `<tr><td data-label="Mensalista"><div><strong>${esc(row.name||'Sem nome')}</strong><small>${esc(row.plate)}</small></div></td>
+    <td data-label="Recebido em"><div>${esc(orderDate(row.paidAt))}${row.paidInPeriod===false?'<small>Pagamento fora do período</small>':''}</div></td>
+    <td data-label="Forma">${labelOf(methodNames,row.payment)}</td>
+    <td data-label="Valor" class="num"><div><strong>${brl(row.amount)}</strong><small>${months} ${months===1?'mês':'meses'}</small>${row.toDue?`<small>Vencimento ${brDay(row.toDue)}</small>`:''}</div></td>
+    <td data-label="Estorno">${row.refundedAt?`<div><span class="badge b-blocked">Estornada</span><small>${esc(orderDate(row.refundedAt))} · ${labelOf(refundMethodNames,row.refundMethod)}</small><small>${brl(row.refundAmount)}</small>${row.refundedBy?`<small>${esc(row.refundedBy)}</small>`:''}${row.refundReason?`<small>${esc(row.refundReason)}</small>`:''}${row.dueRestored&&row.dueAfterRefund?`<small>Vencimento restaurado para ${brDay(row.dueAfterRefund)}</small>`:''}</div>`:'—'}</td></tr>`;
+  }).join('')):'<p class="empty">Nenhum lançamento de mensalidade neste período.</p>';
+  const status=data.planStatus;
+  const statusCards=status?reportCards([['Cadastrados',countValue(status.total)],['Em dia',countValue(status.active)+countValue(status.dueSoon)],['Vencidos',countValue(status.overdue)]]):'';
+  return motionSection('Mensalidades recebidas',statusCards+`<div class="motion-section-foot motion-line-total"><span>Recebido <strong>${brl(data.amount)}</strong></span>
+    <span>${countValue(data.total)} ${data.total===1?'lançamento':'lançamentos'} no período</span>
+    ${Number.isSafeInteger(data.refunded)?`<span>Estornado <strong>${brl(data.refunded)}</strong></span><span>Líquido <strong>${brl(data.net)}</strong></span>`:''}</div>`+rows,
+    'Recebimentos do período, separados das estadias.');
 }
 
 function showFilterFields(){
-  const visible=motion.mode==='visits'||motion.mode==='plates';
+  const visible=motion.mode==='visits'||motion.mode==='plates'||motion.mode==='modes';
   $('#motion-filters').hidden=$('#motion-filters').disabled=!visible;
   const {timeFrom,timeTo}=motionForm.elements;
   $('#motion-midnight').hidden=!(visible&&timeFrom.value&&timeTo.value&&timeFrom.value>timeTo.value);
 }
 motionForm.addEventListener('input',showFilterFields);
+function syncMotionPeriod(){
+  const period=motionForm.elements.period.value;
+  motionForm.querySelectorAll('[data-motion-period]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.motionPeriod===period)));
+}
+function setMotionReference(period,anchor,consult=Boolean(motion.query)){
+  if(motion.loading||!/^\d{4}-\d{2}-\d{2}$/.test(anchor))return;
+  motionForm.elements.period.value=period;
+  motionForm.elements.date.value=anchor;
+  syncMotionPeriod();
+  if(consult)consultMovement();
+}
+function stepMotionDate(amount){
+  const range=movementRange();
+  if(!range)return;
+  const date=new Date(range.from+'T12:00:00Z');
+  if(range.period==='year')date.setUTCFullYear(date.getUTCFullYear()+amount);
+  else if(range.period==='month')date.setUTCMonth(date.getUTCMonth()+amount);
+  else date.setUTCDate(date.getUTCDate()+(range.period==='week'?7:1)*amount);
+  const anchor=isoDay(date);
+  if(anchor>=motionForm.elements.date.min&&anchor<=motionForm.elements.date.max)setMotionReference(range.period,anchor);
+}
+motionForm.elements.period.addEventListener('change',syncMotionPeriod);
+motionForm.querySelectorAll('[data-motion-period]').forEach(button=>button.onclick=()=>{
+  const anchor=motionForm.elements.date.value||editDate(serverTime||Math.floor(Date.now()/1000));
+  if(button.dataset.motionPeriod!==motionForm.elements.period.value)setMotionReference(button.dataset.motionPeriod,anchor);
+});
+motionForm.querySelectorAll('[data-motion-step]').forEach(button=>button.onclick=()=>stepMotionDate(Number(button.dataset.motionStep)));
+$('#motion-today').onclick=()=>setMotionReference(motionForm.elements.period.value,editDate(serverTime||Math.floor(Date.now()/1000)));
+$('#motion-eye').onclick=event=>{
+  const button=event.currentTarget,hidden=button.getAttribute('aria-pressed')!=='true';
+  button.setAttribute('aria-pressed',String(hidden));
+  button.textContent=hidden?'Mostrar valores':'Ocultar valores';
+  $('#area-movement').toggleAttribute('data-values-hidden',hidden);
+};
 $('#operation-views').onclick=event=>{
   const button=event.target.closest('[data-motion]');
   if(!button||motion.mode===button.dataset.motion)return;
@@ -2929,23 +3218,25 @@ async function loadMotion(page=0){
   const progressRange=from===to?brDay(from):`${brDay(from)} a ${brDay(to)}`;
   try{
     let markup,pagination;
-    if(mode==='visits'){
-      const data=await request('visits',{...range,...filters,page});
-      markup=renderVisits(data);pagination=[data.total,data.pageSize||20];
+    if(mode==='visits'||mode==='modes'){
+      const showNotes=mode==='visits'&&boardRecord()?.operationsDataVersion>=2;
+      const data=await request('visits',{...range,...filters,page,...(showNotes?{includeNote:true}:{})});
+      if(mode==='visits'){markup=renderVisits(data);pagination=[data.total,data.pageSize||20];}
+      else markup=motionTotals(data.stats)+renderVisitModes(data.breakdown)+visitBreakdown(data.breakdown);
     }else if(mode==='plates'){
       const items=await allPages('visits',{...range,...filters},context,'Agrupando placas do período',20);
       markup=renderPlateGroups(items);
     }else if(mode==='summary'){
       const data=await request('summary',{...range,...(year?{group:'month'}:{})});
       const daily=year?data.months.map(row=>({...row,day:row.month+'-01'})):data.days;
-      markup=renderDailySummary(makeDailySummary(daily),year,daily);
+      markup=renderDailySummary(makeDailySummary(daily),year,daily,range);
     }else if(mode==='cash'&&from===to){
       const data=await request('cash-day',{day:from,page});
       markup=renderCashDay(data);pagination=[Math.max(data.receiptTotal,data.refundTotal||0),12];
     }else if(mode==='cash'){
       const data=await request('cash',{...range,...(year?{group:'month'}:{})});
       const days=year?data.months.map(row=>({...row,day:row.month+'-01'})):data.days;
-      markup=renderPeriodCash([{...data,days}],year);
+      markup=renderPeriodCash([{...data,days}],year,range);
     }else{
       const data=await request('monthly-payments',{...range,page});
       markup=renderInstallments(data);pagination=[data.total,12];
@@ -2971,40 +3262,77 @@ $('#motion-cancel').onclick=()=>resetOperation('motion','Consulta cancelada.');
 $('#motion-result').onclick=event=>{
   const receipt=event.target.closest('[data-receipt-kind]');
   if(receipt){openRemoteReceipt(receipt);return;}
+  const chart=event.target.closest('[data-motion-chart-date]');
+  if(chart){setMotionReference(chart.dataset.motionChartPeriod,chart.dataset.motionChartDate,true);return;}
   const period=event.target.closest('[data-open-cash-date]');
   if(!period)return;
-  motionForm.elements.period.value=period.dataset.openCashPeriod;
-  motionForm.elements.date.value=period.dataset.openCashDate;
-  consultMovement();
+  setMotionReference(period.dataset.openCashPeriod,period.dataset.openCashDate,true);
 };
 
-function customerStatus(row){
-  if(!row.monthlyStatus)return 'Avulso';
-  return `Mensalista · ${labelOf(planStatuses,row.monthlyStatus,'Situação indisponível')}`;
+const customerPlans={casual:['Avulso','none'],active:['Mensalista','active'],'due-soon':['Mensalista · A vencer','active'],overdue:['Mensalista · Vencido','expired'],inactive:['Mensalista · Inativo','none']};
+const peopleHistoryLabels={...modeNames,unknown:'Sem modalidade',total:'Total'};
+let peopleHistory=null;
+function panelPlate(plate,volume=false){
+  if(!plate)return '—';
+  return `<span class="panel-plate${volume?' is-volume':''}"><small aria-hidden="true">${volume?'VOLUME':'BRASIL'}</small><b>${esc(plate)}</b></span>`;
 }
-function renderPeople(items,scope){
+function customerPlan(row){
+  const status=row.monthlyStatus||row.status;
+  return Object.hasOwn(customerPlans,status)?customerPlans[status]:customerPlans.casual;
+}
+function customerStatus(row){return customerPlan(row)[0];}
+function panelCustomerPhone(value,name,company){
+  const phone=String(value??'').trim(),digits=phone.replace(/\D/g,'');
+  const national=digits.replace(/^(?:00)?55(?=\d{10,11}$)/,'');
+  if(!/^\+?[\d\s().-]+$/.test(phone)||!(/^[1-9]{3}\d{7,8}$/.test(national))||(phone.startsWith('+')&&national===digits))return esc(phone)||'—';
+  const label=`(${national.slice(0,2)}) ${national.slice(2,-4)}-${national.slice(-4)}`;
+  const hour=Number(new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',hourCycle:'h23'}).format());
+  const greeting=hour>=6&&hour<12?'Bom dia':hour>=12&&hour<18?'Boa tarde':'Boa noite';
+  const sender=/\bestacionamento\b/i.test(company)?company:`estacionamento ${company}`;
+  const params=new URLSearchParams({text:`${greeting}! Aqui é do ${sender.trim()}.`});
+  const href=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||navigator.userAgentData?.mobile
+    ?`https://wa.me/55${national}?${params}`:`https://web.whatsapp.com/send?phone=55${national}&${params}`;
+  return `<a class="people-phone" href="${esc(href)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(`Abrir WhatsApp para ${name||label}`)}">${label}</a>`;
+}
+function renderPeople(items,historyReady,company){
   if(!items.length)return '<p class="empty">Nenhum cadastro encontrado nesta consulta.</p>';
-  if(scope==='monthly-plans')return overviewTable([['Cliente'],['Placa e veículo'],['Situação'],['Vencimento'],['Mensalidade',true]],items.map(row=>`<tr>
-    <td data-label="Cliente"><strong>${esc(row.name||'Sem nome')}</strong></td>
-    <td data-label="Placa e veículo"><div><strong>${esc(row.plate)}</strong><small>${esc([row.type,row.model].filter(Boolean).join(' · '))}</small>${Array.isArray(row.alternatePlates)&&row.alternatePlates.length?`<small>Outras placas ${esc(row.alternatePlates.join(', '))}</small>`:''}</div></td>
-    <td data-label="Situação">${labelOf(planStatuses,row.status)}</td><td data-label="Vencimento">${brDay(row.due)}</td><td class="num" data-label="Mensalidade">${brl(row.amount)}</td></tr>`).join(''));
-  return overviewTable([['Placa'],['Cliente'],['Telefone'],['Tipo'],['Plano'],['Atendimentos']],items.map(row=>`<tr>
-    <td data-label="Placa"><strong>${esc(row.plate)}</strong></td>
-    <td data-label="Cliente"><div><strong>${esc(row.name||'Sem nome')}</strong><small>${esc(row.model)}</small></div></td>
-    <td data-label="Telefone">${esc(row.phone)||'—'}</td><td data-label="Tipo">${esc(row.type)||'—'}</td>
-    <td data-label="Plano">${customerStatus(row)}</td>
-    <td data-label="Atendimentos"><div><strong>Total ${countValue(row.visits)}</strong>${row.billingCounts?`<small>${['fraction','daily','overnight'].map(key=>`${modeNames[key]} ${countValue(row.billingCounts[key])}`).join(' · ')}</small>`:''}
-    ${row.monthlyVisits?`<small>${countValue(row.monthlyVisits)} pela mensalidade</small>`:''}${row.unclassifiedVisits?`<small>${countValue(row.unclassifiedVisits)} sem modalidade identificada</small>`:''}</div></td></tr>`).join(''));
+  const headings=['Placa','Cliente','Telefone','Tipo','Plano','Atendimentos'].map(label=>[label]);
+  return `<div class="people-table">${overviewTable(headings,items.map((row,index)=>{
+    const [plan,tone]=customerPlan(row);
+    const counts=[['total',row.visits],...['fraction','daily','overnight'].map(key=>[key,row.billingCounts?.[key]])];
+    const notices=[row.monthlyVisits?`${countValue(row.monthlyVisits)} pela mensalidade`:'',row.unclassifiedVisits?`${countValue(row.unclassifiedVisits)} sem modalidade identificada`:'',row.visits>0&&!row.billingCounts?'Modalidades indisponíveis':''].filter(Boolean);
+    return `<tr><td data-label="Placa">${panelPlate(row.plate)}</td>
+      <td data-label="Cliente"><div><strong>${esc(row.name||'Sem nome')}</strong><small>${esc(row.model)}</small></div></td>
+      <td data-label="Telefone">${panelCustomerPhone(row.phone,row.name,company)}</td>
+      <td data-label="Tipo"><span class="badge b-none">${esc(row.type)||'—'}</span></td>
+      <td data-label="Plano"><span class="badge b-${tone}">${plan}</span></td>
+      <td data-label="Atendimentos"><div class="people-counts" role="group" aria-label="Atendimentos de ${esc(row.plate)}">${counts.map(([key,count])=>{
+        const defined=Number.isSafeInteger(count)&&(key==='total'||count>0||!row.unclassifiedVisits);
+        return `<button type="button" data-people-row="${index}" data-people-attendance="${key}" aria-haspopup="dialog"${historyReady?'':' disabled title="Atualize a placa para abrir o histórico"'}><span>${peopleHistoryLabels[key]}</span><strong>${defined?count:'—'}</strong></button>`;
+      }).join('')}</div>${notices.length?`<small>${notices.join(' · ')}</small>`:''}</td></tr>`;
+  }).join(''))}</div>`;
+}
+function peopleQuery(){return {filter:people.filter,search:peopleForm.elements.search.value.trim()};}
+function beginBoardOperation(){
+  const board=boardRecord();
+  if(board?.operationsRemote!==true||board.online===false)return;
+  if(activeArea==='movement'&&!motion.query)consultMovement();
+  if(activeArea==='people'&&!people.query){people.query=peopleQuery();loadPeople();}
 }
 async function loadPeople(page=0){
   const query=people.query;if(!query||people.loading)return;
   const context=startOperation('people');if(!context)return;
   const output=$('#people-result');output.replaceChildren();$('#people-paging').hidden=true;
   try{
-    const data=await remoteQuery(context.mac,query.scope,{search:query.search,page},context.current,context.progress);
+    const board=boardRecord(),historyReady=board?.operationsDataVersion>=2;
+    const legacyMonthly=query.filter==='monthly'&&!historyReady;
+    const params={search:query.search,page,...(query.filter==='monthly'&&!legacyMonthly?{filter:'monthly'}:{})};
+    const data=await remoteQuery(context.mac,legacyMonthly?'monthly-plans':'customers',params,context.current,context.progress);
     if(!context.current())return;
-    output.innerHTML=renderPeople(data.items,query.scope);people.page=page;
-    operationMessage('people',`${data.total} ${data.total===1?'cadastro encontrado':'cadastros encontrados'}.`);
+    people.items=data.items;people.page=page;
+    output.innerHTML=renderPeople(people.items,historyReady,registeredName(board));
+    $('#people-count').textContent=`${data.total} ${data.total===1?'cadastro':'cadastros'}${query.filter==='monthly'?' de mensalistas':''}`;
+    operationMessage('people',legacyMonthly?'A lista mostra os planos principais. Atualize a placa para consultar os veículos e atendimentos de cada mensalista.':'');
     operationPaging('people',page,data.total,data.pageSize||12);
   }catch(error){
     if(context.current()&&error!==noOperation)operationMessage('people',error.message||remoteUnavailable,true);
@@ -3012,9 +3340,15 @@ async function loadPeople(page=0){
 }
 peopleForm.onsubmit=event=>{
   event.preventDefault();if(people.loading)return;
-  people.query={scope:peopleForm.elements.scope.value,search:peopleForm.elements.search.value.trim()};loadPeople();
+  people.query=peopleQuery();loadPeople();
 };
-peopleForm.elements.scope.onchange=()=>resetOperation('people');
+peopleForm.querySelectorAll('[data-people-filter]').forEach(button=>button.onclick=()=>{
+  const filter=button.dataset.peopleFilter;
+  if(filter===people.filter)return;
+  people.filter=filter;
+  peopleForm.querySelectorAll('[data-people-filter]').forEach(choice=>choice.setAttribute('aria-pressed',String(choice===button)));
+  resetOperation('people');people.query=peopleQuery();loadPeople();
+});
 $('#people-prev').onclick=()=>loadPeople(people.page-1);
 $('#people-next').onclick=()=>loadPeople(people.page+1);
 $('#people-cancel').onclick=()=>resetOperation('people','Consulta cancelada.');
@@ -3032,6 +3366,53 @@ $('#people-export').onclick=async()=>{
     if(context.current()&&error!==noOperation)operationMessage('people',error.message||remoteUnavailable,true);
   }finally{context.finish();}
 };
+
+function peopleStayDuration(visit){
+  if(!visit.in)return '—';
+  const elapsed=Math.max(0,Math.trunc((visit.out||Date.now()/1000)-visit.in));
+  return [Math.floor(elapsed/3600),Math.floor(elapsed/60)%60,elapsed%60].map(value=>String(value).padStart(2,'0')).join(':');
+}
+async function loadPeopleHistory(view,page){
+  const current=()=>peopleHistory===view&&attendanceDialog.open&&boardSelect.value===view.mac&&activeArea==='people';
+  const message=$('#people-attendance-message'),body=$('#people-attendance-body'),paging=$('#people-attendance-paging');
+  const progress=text=>{if(current())message.textContent=text;};
+  paging.hidden=true;body.replaceChildren();
+  try{
+    const data=await remoteQuery(view.mac,'customers',{plate:view.row.plate,attendance:view.filter,page,...(page?{beforeId:view.cursors[page]}:{})},current,progress);
+    if(!current())return;
+    if(!Array.isArray(data.items)||!Number.isSafeInteger(data.total)||!Number.isSafeInteger(data.paidTotal))throw Error('O processador enviou o histórico incompleto.');
+    const shownTotal=Math.max(data.total,view.expected||0);
+    const details=data.items.map(visit=>{
+      const covered=visit.modality==='monthly',paid=['cash','pix','card'].includes(visit.payment);
+      return `<li class="people-history-card"><header><strong>${labelOf(peopleHistoryLabels,visit.modality,'Sem modalidade')}</strong><div><strong>${covered?'Incluído':paid?brl(visit.paidAmount):'—'}</strong><small>${covered?'Na mensalidade':paid?` · Recebido por ${labelOf(methodNames,visit.payment)}`:visit.payment==='pending'?' Pagamento pendente':''}</small></div></header>
+        <dl><div><dt>Entrada</dt><dd>${esc(orderDate(visit.in))}</dd></div><div><dt>Saída</dt><dd>${visit.out?esc(orderDate(visit.out)):'Em andamento'}</dd></div><div><dt>Permanência</dt><dd>${peopleStayDuration(visit)}</dd></div></dl></li>`;
+    }).join('');
+    body.innerHTML=`<dl class="people-history-metrics"><div><dt>Atendimentos registrados</dt><dd>${shownTotal}</dd></div><div><dt>Valor recebido</dt><dd>${brl(data.paidTotal)}</dd></div></dl>
+      ${shownTotal>data.total?`<p class="hint">O histórico disponível tem detalhes de ${data.total} atendimentos.</p>`:''}
+      ${details?`<ul class="people-history-list">${details}</ul>`:'<p class="empty">Nenhum atendimento disponível para esta seleção.</p>'}`;
+    view.cursors.length=page+1;
+    if(data.nextBeforeId)view.cursors.push(data.nextBeforeId);
+    view.page=page;
+    $('#people-attendance-page').textContent=`Página ${page+1}`;
+    $('#people-attendance-prev').disabled=page===0;
+    $('#people-attendance-next').disabled=!data.nextBeforeId;
+    paging.hidden=page===0&&!data.nextBeforeId;progress('');
+  }catch(error){if(error!==noOperation)progress(error.message||remoteUnavailable);}
+}
+$('#people-result').onclick=event=>{
+  const trigger=event.target.closest('[data-people-attendance]'),board=boardRecord();
+  if(!trigger||!(board?.operationsDataVersion>=2)||attendanceDialog.open)return;
+  const row=people.items[Number(trigger.dataset.peopleRow)],filter=trigger.dataset.peopleAttendance;
+  if(!row||!board)return;
+  const expected=filter==='total'?row.visits:row.billingCounts?.[filter];
+  peopleHistory={row,filter,expected,trigger,mac:board.mac,page:0,cursors:[0]};
+  $('#people-attendance-title').textContent=filter==='total'?'Histórico de atendimentos':`Atendimentos · ${peopleHistoryLabels[filter]}`;
+  $('#people-attendance-vehicle').textContent=[row.plate,row.name,row.model].filter(Boolean).join(' · ');
+  attendanceDialog.showModal();loadPeopleHistory(peopleHistory,0);
+};
+attendanceDialog.addEventListener('close',()=>{if(!attendanceDialog.open){peopleHistory?.trigger.focus({preventScroll:true});peopleHistory=null;}});
+$('#people-attendance-prev').onclick=()=>{if(peopleHistory)loadPeopleHistory(peopleHistory,peopleHistory.page-1);};
+$('#people-attendance-next').onclick=()=>{if(peopleHistory)loadPeopleHistory(peopleHistory,peopleHistory.page+1);};
 
 let receiptSequence=0;
 async function openRemoteReceipt(button){
